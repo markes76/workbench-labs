@@ -1,0 +1,26 @@
+{
+  "name": "workbench-labs-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:runtime": "esbuild runtime-src/tool-runtime.js --bundle --platform=node --format=cjs --outfile=Sources/WorkbenchLabsCore/Resources/ToolRuntime/tool-runtime.cjs",
+    "test:runtime": "node Sources/WorkbenchLabsCore/Resources/ToolRuntime/tool-runtime.cjs < Tests/WorkbenchLabsCoreTests/Fixtures/js-runtime-smoke.json"
+  },
+  "dependencies": {
+    "clean-css": "^5.3.3",
+    "diff-match-patch": "^1.0.5",
+    "he": "^1.2.0",
+    "html-minifier-terser": "^7.2.0",
+    "js-beautify": "^1.15.4",
+    "js-yaml": "^4.1.1",
+    "json5": "^2.2.3",
+    "markdown-it": "^14.1.1",
+    "sql-formatter": "^15.7.3",
+    "terser": "^5.47.1",
+    "xml-formatter": "^3.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.0"
+  }
+}

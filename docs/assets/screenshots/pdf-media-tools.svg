@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="title desc">
+  <title id="title">Workbench Labs PDF and media tools</title>
+  <desc id="desc">A preview of local PDF, image, and video tools with real file output workflows.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7fbff"/>
+      <stop offset="1" stop-color="#eef3f7"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="820" fill="url(#bg)"/>
+  <rect x="28" y="32" width="1384" height="756" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+  <rect x="28" y="32" width="278" height="756" rx="18" fill="#f6f8fa"/>
+  <circle cx="54" cy="57" r="7" fill="#ff5f57"/>
+  <circle cx="76" cy="57" r="7" fill="#febc2e"/>
+  <circle cx="98" cy="57" r="7" fill="#28c840"/>
+  <rect x="48" y="92" width="238" height="28" rx="14" fill="#e8ecef"/>
+  <text x="75" y="111" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#6b7280">Search PDF or media</text>
+  <rect x="92" y="146" width="38" height="38" rx="9" fill="#07111f"/>
+  <circle cx="111" cy="165" r="12" fill="none" stroke="#22d3ee" stroke-width="2"/>
+  <path d="M105 166 L111 171 L119 158" fill="none" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="144" y="166" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="17" font-weight="700" fill="#111827">Workbench Labs</text>
+  <text x="144" y="184" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" fill="#6b7280">Native local workbench</text>
+  <text x="48" y="226" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#9ca3af">PDF &amp; Documents</text>
+  <rect x="42" y="242" width="250" height="48" rx="8" fill="#0a74ff"/>
+  <text x="72" y="262" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" font-weight="700" fill="#ffffff">PDF Toolkit</text>
+  <text x="72" y="280" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="11" fill="#dbeafe">Inspect, text, merge, split</text>
+  <text x="48" y="336" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#9ca3af">Image &amp; Video</text>
+  <text x="48" y="368" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#111827">Image Converter</text>
+  <text x="48" y="404" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#111827">Video Converter</text>
+  <rect x="306" y="32" width="1106" height="64" fill="#ffffff"/>
+  <text x="338" y="69" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="18" font-weight="700" fill="#111827">Workbench Labs</text>
+  <rect x="306" y="96" width="1106" height="64" fill="#f7fbff"/>
+  <rect x="338" y="118" width="36" height="36" rx="8" fill="#e7f2ee" stroke="#cbd5e1"/>
+  <text x="392" y="137" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="18" font-weight="700" fill="#111827">PDF Toolkit</text>
+  <text x="392" y="157" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#6b7280">Inspect, extract text, merge, and split selected PDF pages into real files.</text>
+  <rect x="1300" y="116" width="82" height="30" rx="8" fill="#0a74ff"/>
+  <text x="1332" y="136" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" font-weight="700" fill="#ffffff">Run</text>
+  <line x1="306" y1="160" x2="1412" y2="160" stroke="#d9dee4"/>
+  <rect x="338" y="188" width="510" height="238" rx="10" fill="#ffffff" stroke="#d9dee4"/>
+  <text x="362" y="222" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="700" fill="#111827">PDF Files</text>
+  <rect x="730" y="202" width="70" height="30" rx="7" fill="#edf1f4"/>
+  <text x="760" y="222" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Add</text>
+  <text x="362" y="270" font-family="SFMono-Regular,Menlo,monospace" font-size="13" fill="#111827">/Users/me/Downloads/report.pdf</text>
+  <text x="362" y="302" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#6b7280">8 pages, encrypted: false, allows copy: true</text>
+  <text x="362" y="360" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="700" fill="#111827">Operation</text>
+  <rect x="362" y="376" width="94" height="28" rx="7" fill="#edf1f4"/>
+  <text x="390" y="395" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Inspect</text>
+  <rect x="464" y="376" width="108" height="28" rx="7" fill="#edf1f4"/>
+  <text x="488" y="395" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Extract Text</text>
+  <rect x="580" y="376" width="82" height="28" rx="7" fill="#edf1f4"/>
+  <text x="604" y="395" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Merge</text>
+  <rect x="670" y="376" width="104" height="28" rx="7" fill="#0a74ff"/>
+  <text x="696" y="395" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" font-weight="700" fill="#ffffff">Split Pages</text>
+  <rect x="338" y="452" width="510" height="112" rx="10" fill="#ffffff" stroke="#d9dee4"/>
+  <text x="362" y="486" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="700" fill="#111827">Split range</text>
+  <rect x="452" y="466" width="160" height="34" rx="7" fill="#eef2f5" stroke="#ccd3db"/>
+  <text x="468" y="488" font-family="SFMono-Regular,Menlo,monospace" font-size="14" fill="#111827">1-2, 5, 8</text>
+  <text x="362" y="532" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#6b7280">Output defaults to the source PDF folder unless changed.</text>
+  <rect x="884" y="188" width="480" height="376" rx="10" fill="#eef2f5" stroke="#ccd3db"/>
+  <text x="910" y="226" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" font-weight="700" fill="#111827">Result</text>
+  <text x="910" y="270" font-family="SFMono-Regular,Menlo,monospace" font-size="13" fill="#111827">Created split PDF files:</text>
+  <text x="910" y="304" font-family="SFMono-Regular,Menlo,monospace" font-size="13" fill="#111827">report-pages-1-2.pdf</text>
+  <text x="910" y="334" font-family="SFMono-Regular,Menlo,monospace" font-size="13" fill="#111827">report-page-5.pdf</text>
+  <text x="910" y="364" font-family="SFMono-Regular,Menlo,monospace" font-size="13" fill="#111827">report-page-8.pdf</text>
+  <text x="910" y="424" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#6b7280">Reveal Files opens Finder at the generated files.</text>
+  <rect x="910" y="494" width="92" height="30" rx="7" fill="#edf1f4"/>
+  <text x="934" y="514" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Copy</text>
+  <rect x="1014" y="494" width="112" height="30" rx="7" fill="#edf1f4"/>
+  <text x="1040" y="514" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="#111827">Reveal Files</text>
+  <rect x="338" y="598" width="1026" height="126" rx="10" fill="#ffffff" stroke="#d9dee4"/>
+  <text x="362" y="634" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="700" fill="#111827">Media workflows</text>
+  <text x="362" y="668" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#111827">Image Converter: inspect dimensions, color model, file size, and convert PNG, JPEG, HEIC, TIFF, or GIF.</text>
+  <text x="362" y="700" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#111827">Video Converter: inspect with ffprobe, transcode with ffmpeg, and extract MP3 audio beside the source file.</text>
+</svg>
