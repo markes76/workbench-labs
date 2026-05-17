@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 31 registered tools across six categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
+Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 36 registered tools across ten categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
 
 Primary extension points:
 - Tool IDs/categories: `Sources/WorkbenchLabsCore/Models/ToolModels.swift`
@@ -19,25 +19,22 @@ Primary extension points:
 2. Extract a reusable `ExternalProcessRunner` for `ffmpeg`, `git`, `sqlite3`, `openssl`, `curl`, and other local binaries.
 3. Improve file-result handling with explicit output file URLs, Finder reveal actions, and shared save/open panels.
 
+## Recently Shipped
+
+- PDF Page Editor: rotate, reorder, delete, extract ranges, and append pages with PDFKit.
+- PDF OCR Text Extractor: OCR scanned PDFs locally with Apple Vision/Tesseract, English/Hebrew language selection, and page-range selection.
+- PDF Metadata Scrubber: inspect metadata and write rebuilt PDFs with selected metadata fields blanked.
+- Batch Image Resizer/Compressor: resize, compress, strip metadata, and batch-convert images locally.
+- Image Metadata Inspector: inspect EXIF/GPS/color metadata and write GPS-scrubbed safe-sharing copies.
+- Video Clip & Audio Extract: trim video by start/end, extract MP3/WAV/AAC, and generate thumbnails.
+- JSON Schema Validator: validate JSON documents against JSON Schema locally with bundled AJV and path-based errors.
+- .env Inspector & Comparator: inspect, compare, and redact `.env` files without leaking values by default.
+
 ## P1: High-Value Tools
-
-### PDF & Documents
-
-1. PDF Page Editor: rotate, reorder, delete, extract ranges, append pages with PDFKit.
-2. PDF OCR Text Extractor: OCR scanned PDFs with Vision and PDFKit page rendering.
-3. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
-
-### Media
-
-1. Batch Image Resizer/Compressor: resize by width/height/scale, strip metadata, batch output.
-2. Video Clip & Audio Extract: trim by start/end, extract MP3/WAV/AAC, generate thumbnails.
-3. Image Metadata Inspector: EXIF/GPS/color profile inspection and scrub.
 
 ### Developer Utilities
 
-1. JSON Schema Validator with bundled AJV.
-2. `.env` Inspector & Comparator with redaction and missing-key detection.
-3. Git Diff/Ignore Helper using local `git`.
+1. Git Diff/Ignore Helper using local `git`.
 
 ### Security
 
@@ -74,4 +71,4 @@ Primary extension points:
 5. Add `ClipboardInspector` detection when useful.
 6. Add a custom SwiftUI view for multi-file or highly structured workflows.
 7. Add focused `WorkbenchLabsCore` tests and update registry count tests.
-8. Update README with local binary requirements.
+8. Update README, feature guide, and CHANGELOG for user-facing changes.

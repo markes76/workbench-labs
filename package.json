@@ -8,6 +8,7 @@
     "test:runtime": "node Sources/WorkbenchLabsCore/Resources/ToolRuntime/tool-runtime.cjs < Tests/WorkbenchLabsCoreTests/Fixtures/js-runtime-smoke.json"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "clean-css": "^5.3.3",
     "diff-match-patch": "^1.0.5",
     "he": "^1.2.0",

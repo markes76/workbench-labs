@@ -10,6 +10,6 @@ Parse, compare, redact, and report missing keys across .env-style files.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Tool parses .env content without leaking values in reports by default.
-- [ ] Comparator reports added, removed, changed, and missing keys.
-- [ ] Secret-looking values are redacted.
+- [x] Tool parses .env content without leaking values in reports by default.
+- [x] Comparator reports added, removed, changed, and missing keys.
+- [x] Secret-looking values are redacted.
