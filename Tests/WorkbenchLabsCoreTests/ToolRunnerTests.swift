@@ -5,11 +5,12 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 36)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 36)
+    XCTAssertEqual(ToolRegistry.all.count, 37)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 37)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
     XCTAssertTrue(ToolRegistry.all.contains { $0.title == "JSON Schema Validator" })
     XCTAssertTrue(ToolRegistry.all.contains { $0.title == ".env Inspector & Comparator" })
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == "Git Diff & Ignore Helper" })
   }
 
   func testRoadmapCategoriesExistInStableSidebarOrder() {
@@ -185,6 +186,47 @@ final class ToolRunnerTests: XCTestCase {
     XCTAssertFalse(result.output.contains("https://example.com"))
   }
 
+  func testGitDiffIgnoreHelperSummarizesChangedFiles() async throws {
+    let gitURL = try XCTUnwrap(localExecutable(named: "git"))
+    let repoURL = try makeTemporaryGitRepository(gitURL: gitURL)
+    defer { try? FileManager.default.removeItem(at: repoURL) }
+
+    try "first\n".write(to: repoURL.appendingPathComponent("tracked.txt"), atomically: true, encoding: .utf8)
+    try runGit(gitURL, ["add", "tracked.txt"], in: repoURL)
+    try runGit(gitURL, ["-c", "user.name=Workbench Labs", "-c", "user.email=workbench@example.com", "commit", "-m", "initial"], in: repoURL)
+    try "changed\n".write(to: repoURL.appendingPathComponent("tracked.txt"), atomically: true, encoding: .utf8)
+    try "scratch\n".write(to: repoURL.appendingPathComponent("scratch.log"), atomically: true, encoding: .utf8)
+
+    var options = ToolRegistry.definition(for: .gitDiffIgnoreHelper).defaultOptions
+    options.operation = "inspect"
+    let result = try await runner.run(toolID: .gitDiffIgnoreHelper, input: repoURL.path, options: options)
+
+    XCTAssertTrue(result.output.contains("Git Repository Inspect"))
+    XCTAssertTrue(result.output.contains("Modified: tracked.txt"), result.output)
+    XCTAssertTrue(result.output.contains("Untracked: scratch.log"), result.output)
+    XCTAssertTrue(result.output.contains("Read-only git commands"), result.output)
+    XCTAssertEqual(result.metadata["changedFileCount"], "2")
+  }
+
+  func testGitDiffIgnoreHelperTestsIgnorePatternsAgainstPaths() async throws {
+    var options = ToolRegistry.definition(for: .gitDiffIgnoreHelper).defaultOptions
+    options.operation = "ignoreCheck"
+    options.secondaryInput = "build/app.o\nnotes.txt\nerror.log\nimportant.log\n"
+
+    let result = try await runner.run(
+      toolID: .gitDiffIgnoreHelper,
+      input: "build/\n*.log\n!important.log\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("IGNORED  build/app.o"), result.output)
+    XCTAssertTrue(result.output.contains("IGNORED  error.log"), result.output)
+    XCTAssertTrue(result.output.contains("KEPT     notes.txt"), result.output)
+    XCTAssertTrue(result.output.contains("KEPT     important.log"), result.output)
+    XCTAssertEqual(result.metadata["ignoredCount"], "2")
+    XCTAssertEqual(result.metadata["keptCount"], "2")
+  }
+
   func testYAMLToJSONUsesBundledRuntime() async throws {
     let result = try await runner.run(toolID: .yamlToJson, input: "name: WorkbenchLabs\ncount: 27")
     XCTAssertTrue(result.output.contains(#""name": "WorkbenchLabs""#))
@@ -255,5 +297,36 @@ final class ToolRunnerTests: XCTestCase {
     XCTAssertEqual(result.output, "QR code generated.")
     XCTAssertNotNil(result.imagePNGBase64)
     XCTAssertGreaterThan(Data(base64Encoded: result.imagePNGBase64 ?? "")?.count ?? 0, 100)
+  }
+
+  private func makeTemporaryGitRepository(gitURL: URL) throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("WorkbenchLabsGitTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    try runGit(gitURL, ["init"], in: url)
+    return url
+  }
+
+  private func runGit(_ gitURL: URL, _ arguments: [String], in directoryURL: URL) throws {
+    let process = Process()
+    process.executableURL = gitURL
+    process.arguments = arguments
+    process.currentDirectoryURL = directoryURL
+    process.standardOutput = Pipe()
+    process.standardError = Pipe()
+    try process.run()
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationStatus, 0, "git \(arguments.joined(separator: " ")) failed")
+  }
+
+  private func localExecutable(named name: String) -> URL? {
+    [
+      "/opt/homebrew/bin/\(name)",
+      "/usr/local/bin/\(name)",
+      "/usr/bin/\(name)",
+      "/bin/\(name)"
+    ]
+      .first { FileManager.default.isExecutableFile(atPath: $0) }
+      .map(URL.init(fileURLWithPath:))
   }
 }

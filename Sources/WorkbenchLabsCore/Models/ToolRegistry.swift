@@ -146,6 +146,26 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .gitDiffIgnoreHelper,
+      title: "Git Diff & Ignore Helper",
+      subtitle: "Inspect repository changes and test .gitignore patterns with read-only git commands.",
+      category: .developer,
+      systemImage: "arrow.triangle.branch",
+      inputPlaceholder: "Paste .gitignore patterns, or a repository path in Inspect Repo mode...",
+      primaryActionTitle: "Run Git Helper",
+      sampleInput: "build/\n*.log\n!important.log\n",
+      capabilities: [.textInput, .secondaryInput],
+      options: [
+        operationOption([("ignoreCheck", "Test Ignore"), ("inspect", "Inspect Repo")], defaultValue: "ignoreCheck"),
+        ToolOption(
+          key: "secondaryInput",
+          label: "Paths",
+          kind: .text,
+          defaultValue: "build/app.o\nnotes.txt\nerror.log\nimportant.log\n"
+        )
+      ]
+    ),
+    ToolDefinition(
       id: .jsonFormatter,
       title: "JSON Formatter & Validator",
       subtitle: "Validate, format, minify, and normalize JSON.",

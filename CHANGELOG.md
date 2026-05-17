@@ -15,6 +15,7 @@ All notable user-facing tool changes are tracked here.
 - Video Converter: added start/end clip trimming, MP3/WAV/AAC audio extraction, JPG/PNG thumbnail generation, and collision-safe output files beside the source video by default.
 - JSON Schema Validator: added a side-by-side JSON document and schema validator powered by bundled offline AJV, with path-based validation errors.
 - .env Inspector & Comparator: added local .env parsing, safe default inspection without value leaks, key comparison, and redaction.
+- Git Diff & Ignore Helper: added read-only repository status inspection and local `.gitignore` pattern testing with negation support.
 
 ### Changed
 

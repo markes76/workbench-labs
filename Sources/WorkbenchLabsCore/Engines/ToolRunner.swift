@@ -38,6 +38,8 @@ public final class ToolRunner: @unchecked Sendable {
       return try jsRunner.run(tool: "json-schema", input: input, options: options)
     case .envInspector:
       return EnvInspector.run(input: input, options: options)
+    case .gitDiffIgnoreHelper:
+      return try GitDiffIgnoreHelper.run(input: input, options: options)
     case .jsonFormatter:
       return try json(input, options: options)
     case .htmlFormatter:

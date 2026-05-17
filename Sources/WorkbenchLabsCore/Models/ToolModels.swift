@@ -41,6 +41,7 @@ public enum ToolID: String, CaseIterable, Codable, Identifiable, Sendable {
   case secretScanner
   case jsonSchemaValidator
   case envInspector
+  case gitDiffIgnoreHelper
   case jsonFormatter
   case htmlFormatter
   case cssFormatter

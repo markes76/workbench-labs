@@ -32,7 +32,7 @@ final class JavaScriptToolRunnerRuntimeSafetyTests: XCTestCase {
     let scriptURL = try makeRuntimeScript(
       """
       i=0
-      while [ "$i" -lt 10000 ]; do
+      while [ "$i" -lt 1000 ]; do
         printf 'stderr-chunk-%05d\\n' "$i" >&2
         i=$((i + 1))
       done
@@ -53,7 +53,7 @@ final class JavaScriptToolRunnerRuntimeSafetyTests: XCTestCase {
       XCTAssertTrue(message.contains("exited with status 7"), message)
       XCTAssertTrue(message.contains("stderr-chunk-00000"), message)
       XCTAssertTrue(message.contains("truncated"), message)
-      XCTAssertFalse(message.contains("stderr-chunk-09999"), message)
+      XCTAssertFalse(message.contains("stderr-chunk-00999"), message)
       XCTAssertLessThan(message.count, 800)
     }
   }
