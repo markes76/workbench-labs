@@ -16,12 +16,15 @@ Run these after changing `roadmap/features.json`:
 ```sh
 python3 script/sync_roadmap_issues.py
 python3 script/seed_feature_branches.py --feature-id all
+python3 script/refresh_feature_branches.py --feature-id all
 ```
 
 The same tasks are available in GitHub Actions:
 
 - **Roadmap Sync** creates or updates roadmap issues and labels.
 - **Seed Feature Branches** creates feature branches and draft integration PRs.
+
+Use `refresh_feature_branches.py` after workflow, CI, or shared foundation changes so existing feature branches inherit the newest automation before agents open implementation PRs against them.
 
 ## Dispatch Agent Work
 
