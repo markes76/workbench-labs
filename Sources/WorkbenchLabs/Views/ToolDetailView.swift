@@ -201,6 +201,20 @@ struct ToolDetailView: View {
         }
         .disabled(session.wrappedValue.output.isEmpty)
 
+        Button {
+          FileResultActions.copyPaths(generatedFileURLs)
+        } label: {
+          Label(generatedFileURLs.count == 1 ? "Copy Path" : "Copy Paths", systemImage: "link")
+        }
+        .disabled(generatedFileURLs.isEmpty)
+
+        Button {
+          FileResultActions.reveal(generatedFileURLs)
+        } label: {
+          Label(generatedFileURLs.count == 1 ? "Reveal File" : "Reveal Files", systemImage: "finder")
+        }
+        .disabled(generatedFileURLs.isEmpty)
+
         Spacer()
       }
       .padding([.horizontal, .bottom])
@@ -218,8 +232,8 @@ struct ToolDetailView: View {
         Label(diagnostic.message, systemImage: icon(for: diagnostic.severity))
           .foregroundStyle(color(for: diagnostic.severity))
       }
-      if !session.wrappedValue.metadata.isEmpty {
-        Text(session.wrappedValue.metadata.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "  "))
+      if !visibleMetadata.isEmpty {
+        Text(visibleMetadata.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "  "))
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -232,7 +246,20 @@ struct ToolDetailView: View {
   private var diagnosticsVisible: Bool {
     session.wrappedValue.errorMessage != nil ||
     !session.wrappedValue.diagnostics.isEmpty ||
-    !session.wrappedValue.metadata.isEmpty
+    !visibleMetadata.isEmpty
+  }
+
+  private var visibleMetadata: [String: String] {
+    session.wrappedValue.metadata.filter { key, _ in
+      key != FileResultMetadata.generatedFilePathsKey
+    }
+  }
+
+  private var generatedFileURLs: [URL] {
+    FileResultMetadata.existingGeneratedFileURLs(
+      from: session.wrappedValue.metadata,
+      outputFallback: session.wrappedValue.output
+    )
   }
 
   private var imageOutput: NSImage? {
@@ -321,4 +348,5 @@ struct ToolDetailView: View {
       try? store.saveImageOutput(to: url)
     }
   }
+
 }

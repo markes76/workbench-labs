@@ -10,6 +10,6 @@ Inspect and optionally scrub EXIF, GPS, color profile, and common image metadata
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Image Converter inspect output includes common metadata sections.
-- [ ] Scrub mode writes a metadata-reduced copy where supported.
-- [ ] Tests cover metadata-free and metadata-present images.
+- [x] Image Metadata Inspector output includes common metadata sections.
+- [x] Scrub mode writes a metadata-reduced copy where supported.
+- [x] Tests cover metadata-present images and GPS removal.
