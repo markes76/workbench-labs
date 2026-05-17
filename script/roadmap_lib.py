@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import urllib.parse
 from pathlib import Path
 
 
@@ -60,6 +61,98 @@ def repo_name():
         return env_repo
     result = run(["gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"])
     return result.stdout.strip()
+
+
+def repo_owner(repo):
+    return repo.split("/", 1)[0]
+
+
+def gh_api_json(path, *, method="GET", fields=None, data=None):
+    args = ["gh", "api", "--method", method, path]
+    for key, value in (fields or {}).items():
+        args.extend(["-f", f"{key}={value}"])
+    input_text = None
+    if data is not None:
+        args.extend(["--input", "-"])
+        input_text = json.dumps(data)
+    result = run(args, input_text=input_text)
+    output = result.stdout.strip()
+    if not output:
+        return None
+    return json.loads(output)
+
+
+def find_issue_by_title(repo, title, *, state="open"):
+    state_query = "" if state == "all" else f" is:{state}"
+    payload = gh_api_json(
+        "search/issues",
+        fields={
+            "q": f"repo:{repo} is:issue{state_query} in:title {title}",
+            "per_page": "100",
+        },
+    )
+    for issue in payload.get("items", []):
+        if issue.get("title") == title:
+            return issue["number"]
+    return None
+
+
+def find_pr_by_branch(repo, branch, *, state="open"):
+    pulls = gh_api_json(
+        f"repos/{repo}/pulls",
+        fields={
+            "state": state,
+            "head": f"{repo_owner(repo)}:{branch}",
+            "base": "main",
+            "per_page": "100",
+        },
+    )
+    if not pulls:
+        return None
+    pull = pulls[0]
+    labels = issue_labels(repo, pull["number"])
+    return {
+        "number": pull["number"],
+        "url": pull["html_url"],
+        "isDraft": pull.get("draft", False),
+        "labels": [{"name": label} for label in labels],
+    }
+
+
+def add_issue_comment(repo, number, body):
+    return gh_api_json(
+        f"repos/{repo}/issues/{number}/comments",
+        method="POST",
+        data={"body": body},
+    )
+
+
+def update_issue_body(repo, number, body):
+    return gh_api_json(
+        f"repos/{repo}/issues/{number}",
+        method="PATCH",
+        data={"body": body},
+    )
+
+
+def add_issue_labels(repo, number, labels):
+    if isinstance(labels, str):
+        labels = [labels]
+    return gh_api_json(
+        f"repos/{repo}/issues/{number}/labels",
+        method="POST",
+        data={"labels": labels},
+    )
+
+
+def remove_issue_label(repo, number, label):
+    encoded = urllib.parse.quote(label, safe="")
+    run(["gh", "api", "--method", "DELETE", f"repos/{repo}/issues/{number}/labels/{encoded}"], check=False)
+
+
+def issue_labels(repo, number):
+    labels = gh_api_json(f"repos/{repo}/issues/{number}/labels", fields={"per_page": "100"})
+    return [label["name"] for label in labels or []]
 
 
 def issue_title(feature):
