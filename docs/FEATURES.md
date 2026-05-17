@@ -290,16 +290,36 @@ Key features:
 
 ### PDF Toolkit
 
-Inspects, extracts text, merges, and splits PDF files locally.
+Inspects, extracts text, scrubs metadata, merges, splits, and edits PDF pages locally.
 
 Key features:
 - Add or drop PDF files.
-- Inspect PDF page count and document properties.
+- Inspect PDF page count, document properties, and metadata fields including title, author, subject, creator, producer, keywords, and dates.
 - Extract selectable text.
+- Scrub selected metadata fields into a new PDF while preserving the original file.
 - Merge multiple PDFs.
 - Split all pages or selected page ranges such as `1-2, 5, 8`.
+- Extract selected pages into one PDF.
+- Delete selected pages while preserving the original file.
+- Reorder pages with an explicit page sequence such as `3,1,2`.
+- Rotate all pages or selected page ranges by 90, 180, or 270 degrees.
+- Append pages from additional PDFs into a new file.
 - Output files default to the source PDF folder unless an output location is provided.
 - Reveal generated files in Finder.
+
+### PDF OCR Text Extractor
+
+Extracts text from scanned or image-based PDFs locally with Apple Vision or local Tesseract for Hebrew.
+
+Key features:
+- Accepts one PDF file path via paste, file open, or drag/drop.
+- OCR runs locally on rendered PDF pages without uploading documents.
+- Language selector supports English, Hebrew, and English + Hebrew.
+- English OCR uses Apple Vision on macOS.
+- Hebrew and English + Hebrew OCR use local Tesseract with Hebrew language data (`brew install tesseract tesseract-lang`).
+- Page selector supports `all`, individual pages, and ranges such as `1,3-5`.
+- Output is grouped by page and includes confidence summaries where the OCR engine provides confidence.
+- Metadata reports processed page count, recognized text line count, OCR engine, selected recognition languages, and average confidence when available.
 
 ## Image & Video
 
@@ -326,4 +346,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include a PDF page editor, PDF OCR, metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
