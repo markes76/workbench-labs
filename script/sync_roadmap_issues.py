@@ -2,7 +2,18 @@
 import argparse
 import json
 import subprocess
-from roadmap_lib import issue_body, issue_title, load_features, repo_name, run, select_features
+from roadmap_lib import (
+    add_issue_labels,
+    find_issue_by_title,
+    gh_api_json,
+    issue_body,
+    issue_title,
+    load_features,
+    repo_name,
+    run,
+    select_features,
+    update_issue_body,
+)
 
 
 LABELS = {
@@ -26,17 +37,7 @@ def ensure_label(repo, name, color, description):
 
 
 def find_issue(repo, title):
-    result = run([
-        "gh", "issue", "list",
-        "--repo", repo,
-        "--state", "all",
-        "--search", f'"{title}" in:title',
-        "--json", "number,title",
-    ])
-    for issue in json.loads(result.stdout):
-        if issue["title"] == title:
-            return issue["number"]
-    return None
+    return find_issue_by_title(repo, title, state="all")
 
 
 def sync_issue(repo, feature):
@@ -57,19 +58,18 @@ def sync_issue(repo, feature):
     number = find_issue(repo, title)
     body = issue_body(feature)
     if number:
-        run(["gh", "issue", "edit", str(number), "--repo", repo, "--body", body, "--add-label", ",".join(labels)])
+        update_issue_body(repo, number, body)
+        add_issue_labels(repo, number, labels)
         print(f"updated issue #{number}: {title}")
         return number
 
-    result = run([
-        "gh", "issue", "create",
-        "--repo", repo,
-        "--title", title,
-        "--body", body,
-        "--label", ",".join(labels),
-    ])
-    print(result.stdout.strip())
-    return None
+    issue = gh_api_json(
+        f"repos/{repo}/issues",
+        method="POST",
+        data={"title": title, "body": body, "labels": labels},
+    )
+    print(issue["html_url"])
+    return issue["number"]
 
 
 def main():
