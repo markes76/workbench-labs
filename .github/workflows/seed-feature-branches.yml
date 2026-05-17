@@ -13,6 +13,9 @@ permissions:
   issues: write
   pull-requests: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   seed:
     name: Seed branches and integration PRs
@@ -21,7 +24,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
