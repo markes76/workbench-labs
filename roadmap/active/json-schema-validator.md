@@ -10,6 +10,6 @@ Validate JSON input against JSON Schema using a bundled offline validator.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] User can enter JSON and schema side-by-side.
-- [ ] Output lists validation errors with paths.
-- [ ] Runtime works offline after npm dependencies are vendored.
+- [x] User can enter JSON and schema side-by-side.
+- [x] Output lists validation errors with paths.
+- [x] Runtime works offline after npm dependencies are vendored.

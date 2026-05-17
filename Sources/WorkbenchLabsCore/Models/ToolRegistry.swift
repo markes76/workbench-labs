@@ -105,6 +105,26 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .jsonSchemaValidator,
+      title: "JSON Schema Validator",
+      subtitle: "Validate JSON documents against JSON Schema locally with bundled AJV.",
+      category: .developer,
+      systemImage: "checklist.checked",
+      inputPlaceholder: "Paste JSON to validate...",
+      primaryActionTitle: "Validate",
+      sampleInput: #"{"name":"Workbench Labs","count":3}"#,
+      capabilities: [.textInput, .secondaryInput],
+      options: [
+        ToolOption(
+          key: "secondaryInput",
+          label: "Schema",
+          kind: .text,
+          defaultValue: #"{"type":"object","required":["name","count"],"properties":{"name":{"type":"string"},"count":{"type":"integer","minimum":1}}}"#
+        ),
+        ToolOption(key: "strictSchema", label: "Strict schema", kind: .boolean, defaultValue: "false")
+      ]
+    ),
+    ToolDefinition(
       id: .jsonFormatter,
       title: "JSON Formatter & Validator",
       subtitle: "Validate, format, minify, and normalize JSON.",

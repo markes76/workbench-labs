@@ -198,6 +198,19 @@ Key features:
 - camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, and Title Case.
 - All mode for comparing every result at once.
 
+## Developer
+
+### JSON Schema Validator
+
+Validates JSON documents against JSON Schema locally with bundled AJV.
+
+Key features:
+- Side-by-side JSON document and JSON Schema editors.
+- Uses the offline bundled runtime after dependencies are vendored.
+- Reports valid documents with validation metadata.
+- Lists invalid document errors with JSON instance paths and schema paths.
+- Optional strict schema mode for tighter schema authoring checks.
+
 ## Encode & Decode
 
 ### URL Encoder & Decoder
@@ -377,4 +390,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

@@ -34,6 +34,8 @@ public final class ToolRunner: @unchecked Sendable {
       return stringInspector(input)
     case .secretScanner:
       return try secretScanner(input, options: options)
+    case .jsonSchemaValidator:
+      return try jsRunner.run(tool: "json-schema", input: input, options: options)
     case .jsonFormatter:
       return try json(input, options: options)
     case .htmlFormatter:
