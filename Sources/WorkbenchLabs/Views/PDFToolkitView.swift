@@ -9,6 +9,15 @@ struct PDFToolkitView: View {
   @State private var operation = "inspect"
   @State private var splitMode = "all"
   @State private var selectedPages = "1"
+  @State private var rotationDegrees = "90"
+  @State private var scrubTitle = true
+  @State private var scrubAuthor = true
+  @State private var scrubSubject = true
+  @State private var scrubCreator = true
+  @State private var scrubProducer = true
+  @State private var scrubKeywords = true
+  @State private var scrubCreationDate = true
+  @State private var scrubModificationDate = true
   @State private var outputDirectoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
   @State private var mergeOutputURL: URL?
   @State private var output = ""
@@ -37,7 +46,7 @@ struct PDFToolkitView: View {
   private var header: some View {
     ToolWorkspaceHeader(
       title: "PDF Toolkit",
-      subtitle: "Inspect, extract text, merge, and split selected PDF pages into real files.",
+      subtitle: "Inspect, scrub metadata, extract text, merge, split, edit, and append PDF pages into real files.",
       systemImage: "doc.richtext"
     ) {
       if isRunning {
@@ -91,7 +100,7 @@ struct PDFToolkitView: View {
         ContentUnavailableView(
           "No PDF selected",
           systemImage: "doc.badge.plus",
-          description: Text("Choose one PDF for inspect/extract/split, or multiple PDFs for merge.")
+          description: Text("Choose one PDF for page edits, or multiple PDFs for merge and append.")
         )
         .frame(maxWidth: .infinity, minHeight: 160)
       } else {
@@ -120,14 +129,23 @@ struct PDFToolkitView: View {
       Text("Operation")
         .font(.headline)
 
-      Picker("Operation", selection: $operation) {
-        Text("Inspect").tag("inspect")
-        Text("Extract Text").tag("extractText")
-        Text("Merge").tag("merge")
-        Text("Split Pages").tag("split")
+      HStack {
+        Picker("Operation", selection: $operation) {
+          Text("Inspect").tag("inspect")
+          Text("Extract Text").tag("extractText")
+          Text("Merge PDFs").tag("merge")
+          Text("Split Pages").tag("split")
+          Text("Extract Pages").tag("extractPages")
+          Text("Delete Pages").tag("deletePages")
+          Text("Reorder Pages").tag("reorderPages")
+          Text("Rotate Pages").tag("rotatePages")
+          Text("Append Pages").tag("appendPages")
+          Text("Scrub Metadata").tag("scrubMetadata")
+        }
+        .pickerStyle(.menu)
+        .frame(width: 220)
+        Spacer()
       }
-      .pickerStyle(.segmented)
-      .labelsHidden()
 
       if operation == "split" {
         VStack(alignment: .leading, spacing: 10) {
@@ -145,10 +163,61 @@ struct PDFToolkitView: View {
               .foregroundStyle(.secondary)
           }
         }
+      } else if operation == "extractPages" || operation == "rotatePages" {
+        VStack(alignment: .leading, spacing: 10) {
+          Picker("Page scope", selection: $splitMode) {
+            Text("All pages").tag("all")
+            Text("Selected pages").tag("selected")
+          }
+          .pickerStyle(.segmented)
+
+          if splitMode == "selected" {
+            TextField("Pages, for example 1,3-5", text: $selectedPages)
+              .textFieldStyle(.roundedBorder)
+          }
+
+          if operation == "rotatePages" {
+            Picker("Rotation", selection: $rotationDegrees) {
+              Text("90 degrees").tag("90")
+              Text("180 degrees").tag("180")
+              Text("270 degrees").tag("270")
+            }
+            .pickerStyle(.segmented)
+          }
+        }
+      } else if operation == "deletePages" {
+        TextField("Pages to delete, for example 2,4-6", text: $selectedPages)
+          .textFieldStyle(.roundedBorder)
+      } else if operation == "reorderPages" {
+        VStack(alignment: .leading, spacing: 8) {
+          TextField("New page order, for example 3,1,2,4-6", text: $selectedPages)
+            .textFieldStyle(.roundedBorder)
+          Text("Only pages listed here are written to the new PDF, in this exact order.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+      } else if operation == "scrubMetadata" {
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Remove Fields")
+            .font(.subheadline.weight(.semibold))
+          LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
+            Toggle("Title", isOn: $scrubTitle)
+            Toggle("Author", isOn: $scrubAuthor)
+            Toggle("Subject", isOn: $scrubSubject)
+            Toggle("Creator", isOn: $scrubCreator)
+            Toggle("Producer", isOn: $scrubProducer)
+            Toggle("Keywords", isOn: $scrubKeywords)
+            Toggle("Creation date", isOn: $scrubCreationDate)
+            Toggle("Modified date", isOn: $scrubModificationDate)
+          }
+          Text("The scrubbed PDF is written as a new file; the original stays unchanged.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
       }
 
-      if operation == "merge", selectedPDFURLs.count < 2 {
-        Label("Merge requires at least two PDFs.", systemImage: "exclamationmark.triangle")
+      if requiresMultiplePDFs, selectedPDFURLs.count < 2 {
+        Label("\(primaryActionTitle) requires at least two PDFs.", systemImage: "exclamationmark.triangle")
           .font(.caption)
           .foregroundStyle(.orange)
       }
@@ -173,12 +242,12 @@ struct PDFToolkitView: View {
           }
         }
       }
-    } else if operation == "merge" {
+    } else if usesOutputFile {
       VStack(alignment: .leading, spacing: 10) {
         Text("Output File")
           .font(.headline)
         HStack {
-          Text(mergeOutputURL?.path ?? "Choose where to save the merged PDF")
+          Text(mergeOutputURL?.path ?? suggestedOutputURL?.path ?? "Choose where to save the output PDF")
             .lineLimit(1)
             .truncationMode(.middle)
           Spacer()
@@ -219,7 +288,14 @@ struct PDFToolkitView: View {
         .disabled(output.isEmpty)
 
         Button {
-          revealOutputs()
+          FileResultActions.copyPaths(outputURLs)
+        } label: {
+          Label("Copy Paths", systemImage: "link")
+        }
+        .disabled(outputURLs.isEmpty)
+
+        Button {
+          FileResultActions.reveal(outputURLs)
         } label: {
           Label("Reveal Files", systemImage: "finder")
         }
@@ -236,17 +312,58 @@ struct PDFToolkitView: View {
     case "extractText": "Extract"
     case "merge": "Merge"
     case "split": "Split"
+    case "extractPages": "Extract"
+    case "deletePages": "Delete"
+    case "reorderPages": "Reorder"
+    case "rotatePages": "Rotate"
+    case "appendPages": "Append"
+    case "scrubMetadata": "Scrub"
     default: "Inspect"
     }
   }
 
   private var canRun: Bool {
     if selectedPDFURLs.isEmpty || isRunning { return false }
-    if operation == "merge" { return selectedPDFURLs.count >= 2 }
+    if requiresMultiplePDFs { return selectedPDFURLs.count >= 2 }
     if operation == "split", splitMode == "selected" {
       return !selectedPages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+    if ["deletePages", "reorderPages"].contains(operation) {
+      return !selectedPages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    if operation == "scrubMetadata" {
+      return scrubTitle || scrubAuthor || scrubSubject || scrubCreator || scrubProducer || scrubKeywords || scrubCreationDate || scrubModificationDate
+    }
+    if ["extractPages", "rotatePages"].contains(operation), splitMode == "selected" {
+      return !selectedPages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
     return true
+  }
+
+  private var requiresMultiplePDFs: Bool {
+    operation == "merge" || operation == "appendPages"
+  }
+
+  private var usesOutputFile: Bool {
+    ["merge", "extractPages", "deletePages", "reorderPages", "rotatePages", "appendPages", "scrubMetadata"].contains(operation)
+  }
+
+  private var suggestedOutputURL: URL? {
+    guard let firstURL = selectedPDFURLs.first else { return nil }
+    let suffix: String
+    switch operation {
+    case "merge": suffix = "merged"
+    case "extractPages": suffix = "extracted"
+    case "deletePages": suffix = "deleted"
+    case "reorderPages": suffix = "reordered"
+    case "rotatePages": suffix = "rotated"
+    case "appendPages": suffix = "appended"
+    case "scrubMetadata": suffix = "metadata-scrubbed"
+    default: suffix = "output"
+    }
+    return firstURL
+      .deletingLastPathComponent()
+      .appendingPathComponent("\(firstURL.deletingPathExtension().lastPathComponent)-\(suffix).pdf")
   }
 
   private func restoreSession() {
@@ -258,6 +375,15 @@ struct PDFToolkitView: View {
     operation = session.options.operation.isEmpty ? "inspect" : session.options.operation
     selectedPages = session.options.textValues["pages"] ?? "1"
     splitMode = selectedPages.lowercased() == "all" ? "all" : "selected"
+    rotationDegrees = session.options.textValues["rotation"] ?? "90"
+    scrubTitle = session.options.boolValues["scrubTitle"] ?? true
+    scrubAuthor = session.options.boolValues["scrubAuthor"] ?? true
+    scrubSubject = session.options.boolValues["scrubSubject"] ?? true
+    scrubCreator = session.options.boolValues["scrubCreator"] ?? true
+    scrubProducer = session.options.boolValues["scrubProducer"] ?? true
+    scrubKeywords = session.options.boolValues["scrubKeywords"] ?? true
+    scrubCreationDate = session.options.boolValues["scrubCreationDate"] ?? true
+    scrubModificationDate = session.options.boolValues["scrubModificationDate"] ?? true
     if let folder = session.options.textValues["outputDirectory"], !folder.isEmpty {
       outputDirectoryURL = URL(fileURLWithPath: NSString(string: folder).expandingTildeInPath)
     }
@@ -266,7 +392,7 @@ struct PDFToolkitView: View {
     }
     output = session.output
     errorMessage = session.errorMessage
-    outputURLs = existingFileURLs(in: session.output)
+    outputURLs = FileResultMetadata.existingGeneratedFileURLs(from: session.metadata, outputFallback: session.output)
   }
 
   private func choosePDFs() {
@@ -278,9 +404,7 @@ struct PDFToolkitView: View {
       selectedPDFURLs = panel.urls
       if let firstURL = panel.urls.first {
         outputDirectoryURL = firstURL.deletingLastPathComponent()
-        mergeOutputURL = firstURL
-          .deletingLastPathComponent()
-          .appendingPathComponent("\(firstURL.deletingPathExtension().lastPathComponent)-merged.pdf")
+        mergeOutputURL = suggestedOutputURL
       }
       outputURLs.removeAll()
     }
@@ -299,7 +423,7 @@ struct PDFToolkitView: View {
   private func chooseMergeOutput() {
     let panel = NSSavePanel()
     panel.allowedContentTypes = [.pdf]
-    panel.nameFieldStringValue = "merged.pdf"
+    panel.nameFieldStringValue = suggestedOutputURL?.lastPathComponent ?? "output.pdf"
     if panel.runModal() == .OK {
       mergeOutputURL = panel.url
     }
@@ -309,12 +433,25 @@ struct PDFToolkitView: View {
     guard canRun else { return }
     var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
     options.operation = operation
-    options.textValues["pages"] = operation == "split" && splitMode == "selected" ? selectedPages : "all"
+    if ["split", "extractPages", "rotatePages"].contains(operation) {
+      options.textValues["pages"] = splitMode == "selected" ? selectedPages : "all"
+    } else {
+      options.textValues["pages"] = selectedPages
+    }
+    options.textValues["rotation"] = rotationDegrees
+    options.boolValues["scrubTitle"] = scrubTitle
+    options.boolValues["scrubAuthor"] = scrubAuthor
+    options.boolValues["scrubSubject"] = scrubSubject
+    options.boolValues["scrubCreator"] = scrubCreator
+    options.boolValues["scrubProducer"] = scrubProducer
+    options.boolValues["scrubKeywords"] = scrubKeywords
+    options.boolValues["scrubCreationDate"] = scrubCreationDate
+    options.boolValues["scrubModificationDate"] = scrubModificationDate
     if let outputDirectoryURL {
       options.textValues["outputDirectory"] = outputDirectoryURL.path
     }
-    if let mergeOutputURL {
-      options.textValues["outputPath"] = mergeOutputURL.path
+    if let outputURL = mergeOutputURL ?? suggestedOutputURL {
+      options.textValues["outputPath"] = outputURL.path
     }
 
     let input = selectedPDFURLs.map(\.path).joined(separator: "\n")
@@ -340,7 +477,7 @@ struct PDFToolkitView: View {
     isRunning = false
     output = result.output
     errorMessage = nil
-    outputURLs = existingFileURLs(in: result.output)
+    outputURLs = FileResultMetadata.existingGeneratedFileURLs(from: result.metadata, outputFallback: result.output)
     var session = ToolSessionState(definition: ToolRegistry.definition(for: .pdfToolkit))
     session.input = input
     session.options = options
@@ -362,21 +499,9 @@ struct PDFToolkitView: View {
     store.sessions[.pdfToolkit] = session
   }
 
-  private func existingFileURLs(in text: String) -> [URL] {
-    text
-      .split(whereSeparator: \.isNewline)
-      .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-      .map { URL(fileURLWithPath: $0) }
-      .filter { FileManager.default.fileExists(atPath: $0.path) }
-  }
-
   private func copyOutput() {
     guard !output.isEmpty else { return }
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(output, forType: .string)
-  }
-
-  private func revealOutputs() {
-    NSWorkspace.shared.activateFileViewerSelecting(outputURLs)
   }
 }

@@ -21,7 +21,8 @@ let package = Package(
         .linkedFramework("AppKit"),
         .linkedFramework("CoreImage"),
         .linkedFramework("ImageIO"),
-        .linkedFramework("PDFKit")
+        .linkedFramework("PDFKit"),
+        .linkedFramework("Vision")
       ]
     ),
     .executableTarget(

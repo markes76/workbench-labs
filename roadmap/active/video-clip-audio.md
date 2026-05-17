@@ -10,6 +10,6 @@ Trim video by start/end time, extract MP3/WAV/AAC, and generate thumbnails with 
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Video Converter supports trim start/end controls.
-- [ ] Audio extraction supports MP3, WAV, and AAC.
-- [ ] Generated outputs default to the source video folder.
+- [x] Video Converter supports trim start/end controls.
+- [x] Audio extraction supports MP3, WAV, and AAC.
+- [x] Generated outputs default to the source video folder.

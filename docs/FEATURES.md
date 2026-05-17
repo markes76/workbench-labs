@@ -290,16 +290,36 @@ Key features:
 
 ### PDF Toolkit
 
-Inspects, extracts text, merges, and splits PDF files locally.
+Inspects, extracts text, scrubs metadata, merges, splits, and edits PDF pages locally.
 
 Key features:
 - Add or drop PDF files.
-- Inspect PDF page count and document properties.
+- Inspect PDF page count, document properties, and metadata fields including title, author, subject, creator, producer, keywords, and dates.
 - Extract selectable text.
+- Scrub selected metadata fields into a new PDF while preserving the original file.
 - Merge multiple PDFs.
 - Split all pages or selected page ranges such as `1-2, 5, 8`.
+- Extract selected pages into one PDF.
+- Delete selected pages while preserving the original file.
+- Reorder pages with an explicit page sequence such as `3,1,2`.
+- Rotate all pages or selected page ranges by 90, 180, or 270 degrees.
+- Append pages from additional PDFs into a new file.
 - Output files default to the source PDF folder unless an output location is provided.
 - Reveal generated files in Finder.
+
+### PDF OCR Text Extractor
+
+Extracts text from scanned or image-based PDFs locally with Apple Vision or local Tesseract for Hebrew.
+
+Key features:
+- Accepts one PDF file path via paste, file open, or drag/drop.
+- OCR runs locally on rendered PDF pages without uploading documents.
+- Language selector supports English, Hebrew, and English + Hebrew.
+- English OCR uses Apple Vision on macOS.
+- Hebrew and English + Hebrew OCR use local Tesseract with Hebrew language data (`brew install tesseract tesseract-lang`).
+- Page selector supports `all`, individual pages, and ranges such as `1,3-5`.
+- Output is grouped by page and includes confidence summaries where the OCR engine provides confidence.
+- Metadata reports processed page count, recognized text line count, OCR engine, selected recognition languages, and average confidence when available.
 
 ## Image & Video
 
@@ -313,17 +333,48 @@ Key features:
 - Quality option for lossy formats.
 - Output defaults beside the source image unless a file path is provided.
 
+### Batch Image Resizer & Compressor
+
+Processes multiple image files locally for resize, format conversion, compression, and metadata stripping.
+
+Key features:
+- Add or drop multiple image files.
+- Resize by target width, target height, maximum dimension, or scale percentage.
+- Output to PNG, JPEG, HEIC, TIFF, or the original source format when supported.
+- Quality control for JPEG and HEIC output.
+- Optional metadata stripping.
+- Output defaults beside each source image unless an output folder is selected.
+- Collision-safe output names avoid overwriting existing files.
+- Reveal generated files in Finder.
+
+### Image Metadata Inspector
+
+Inspects image metadata locally and writes safer sharing copies with GPS location data removed.
+
+Key features:
+- Inspect image dimensions, frame count, DPI, color model, and color profile.
+- Detect GPS location metadata and report latitude/longitude when present.
+- Flag images that carry geolocation metadata as a privacy risk.
+- Scrub GPS location metadata by default without changing the original file.
+- Optional camera metadata, descriptive metadata, or full metadata removal.
+- Output defaults beside each source image unless an output folder is selected.
+- Collision-safe output names avoid overwriting existing files.
+- Reveal generated scrubbed images in Finder.
+
 ### Video Converter
 
 Inspects and converts video files locally with `ffmpeg` and `ffprobe` when installed.
 
 Key features:
 - Inspect video streams, metadata, duration, and codecs.
-- Convert to MP4, MOV, WebM, GIF, or MP3.
-- MP3 extraction from video files.
+- Convert to MP4, MOV, WebM, or GIF.
+- Trim clips with optional start and end time controls.
+- Extract MP3, WAV, or AAC audio.
+- Generate JPG or PNG thumbnails.
 - Output defaults beside the source video unless a file path is provided.
+- Collision-safe output names avoid overwriting existing files.
 - Uses local binaries and does not upload media.
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include a PDF page editor, PDF OCR, metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
