@@ -5,10 +5,11 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 35)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 35)
+    XCTAssertEqual(ToolRegistry.all.count, 36)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 36)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
     XCTAssertTrue(ToolRegistry.all.contains { $0.title == "JSON Schema Validator" })
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == ".env Inspector & Comparator" })
   }
 
   func testRoadmapCategoriesExistInStableSidebarOrder() {
@@ -127,6 +128,61 @@ final class ToolRunnerTests: XCTestCase {
 
     XCTAssertTrue(result.output.contains("Valid JSON"))
     XCTAssertEqual(result.metadata["valid"], "true")
+  }
+
+  func testEnvInspectorSummarizesWithoutLeakingValuesByDefault() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "inspect"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=super-secret-token\nPUBLIC_URL=https://example.com\nEMPTY=\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("3 keys"))
+    XCTAssertTrue(result.output.contains("API_KEY"))
+    XCTAssertTrue(result.output.contains("PUBLIC_URL"))
+    XCTAssertFalse(result.output.contains("super-secret-token"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
+    XCTAssertEqual(result.metadata["keyCount"], "3")
+  }
+
+  func testEnvInspectorCompareReportsAddedRemovedChangedAndMissingKeys() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "compare"
+    options.secondaryInput = "API_KEY=changed\nDATABASE_URL=postgres://example\nNEW_FLAG=true\n"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=old\nPUBLIC_URL=https://example.com\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Changed keys: API_KEY"))
+    XCTAssertTrue(result.output.contains("Removed keys: PUBLIC_URL"))
+    XCTAssertTrue(result.output.contains("Added keys: DATABASE_URL, NEW_FLAG"))
+    XCTAssertTrue(result.output.contains("Missing in right: PUBLIC_URL"))
+    XCTAssertTrue(result.output.contains("Missing in left: DATABASE_URL, NEW_FLAG"))
+    XCTAssertFalse(result.output.contains("postgres://example"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
+  }
+
+  func testEnvInspectorRedactsValuesAndPreservesKeyNames() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "redact"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=super-secret-token\nexport PUBLIC_URL=https://example.com\n# comment\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("API_KEY=<redacted>"))
+    XCTAssertTrue(result.output.contains("export PUBLIC_URL=<redacted>"))
+    XCTAssertTrue(result.output.contains("# comment"))
+    XCTAssertFalse(result.output.contains("super-secret-token"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
   }
 
   func testYAMLToJSONUsesBundledRuntime() async throws {

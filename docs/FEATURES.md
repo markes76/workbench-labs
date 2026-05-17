@@ -211,6 +211,16 @@ Key features:
 - Lists invalid document errors with JSON instance paths and schema paths.
 - Optional strict schema mode for tighter schema authoring checks.
 
+### .env Inspector & Comparator
+
+Parses, compares, and redacts `.env` files without exposing secret values by default.
+
+Key features:
+- Inspect mode lists keys, duplicate keys, invalid lines, and secret-looking entries.
+- Compare mode reports added, removed, changed, missing, and unchanged keys across two `.env` blocks.
+- Redact mode preserves key names and comments while replacing values with `<redacted>`.
+- Values are hidden by default; optional show-values mode is available for trusted local review.
+
 ## Encode & Decode
 
 ### URL Encoder & Decoder
@@ -390,4 +400,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

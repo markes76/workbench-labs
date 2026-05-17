@@ -27,7 +27,7 @@ Workbench Labs is an open-source native macOS developer utility workbench. It is
 
 - Inspect/Test: Unix time, regular expressions, JWTs, HTML preview, Markdown preview, text diff, string inspection, secret scanning
 - Format/Convert: JSON, HTML, CSS, JavaScript, XML, YAML/JSON, SQL, number bases, string case, HTML/SVG to JSX
-- Developer: JSON Schema validation with local AJV
+- Developer: JSON Schema validation with local AJV plus .env inspection, comparison, and redaction
 - Encode/Decode: URL, Base64, query strings, HTML entities, backslash escaping
 - Generate/Crypto: UUID/ULID-style UUID workflows, Lorem Ipsum, QR code, hash generation
 - PDF & Documents: inspect PDFs, extract selectable text, scrub PDF metadata, OCR scanned PDFs locally in English and Hebrew, merge PDFs, split selected pages, extract page ranges into one PDF, delete pages, reorder pages, rotate pages, and append pages from other PDFs
@@ -37,7 +37,7 @@ See every tool and workflow in the [complete feature guide](docs/FEATURES.md).
 
 ## Roadmap at a Glance
 
-Planned future builds include `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+Planned future builds include certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
 
 See the full future roadmap in [docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md).
 
