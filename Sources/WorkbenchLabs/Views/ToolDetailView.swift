@@ -89,10 +89,10 @@ struct ToolDetailView: View {
           handleDrop(providers)
         }
 
-        if definition.id == .textDiff {
+        if showsSecondaryEditor {
           CodeEditorView(
-            title: "Changed",
-            placeholder: "Changed text",
+            title: secondaryEditorTitle,
+            placeholder: secondaryEditorPlaceholder,
             text: Binding(
               get: { session.wrappedValue.options.secondaryInput },
               set: { value in
@@ -141,6 +141,24 @@ struct ToolDetailView: View {
       }
       .padding()
     }
+  }
+
+  private var showsSecondaryEditor: Bool {
+    definition.id == .textDiff || definition.id == .envInspector
+  }
+
+  private var secondaryEditorTitle: String {
+    if definition.id == .textDiff {
+      return "Changed"
+    }
+    return definition.options.first { $0.key == "secondaryInput" }?.label ?? "Secondary Input"
+  }
+
+  private var secondaryEditorPlaceholder: String {
+    if definition.id == .textDiff {
+      return "Changed text"
+    }
+    return "Paste comparison input..."
   }
 
   private var outputPane: some View {

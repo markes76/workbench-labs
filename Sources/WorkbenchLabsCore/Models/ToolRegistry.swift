@@ -125,6 +125,27 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .envInspector,
+      title: ".env Inspector & Comparator",
+      subtitle: "Parse, compare, and redact .env files without exposing secret values.",
+      category: .developer,
+      systemImage: "text.badge.checkmark",
+      inputPlaceholder: "Paste .env content...",
+      primaryActionTitle: "Inspect",
+      sampleInput: "API_KEY=super-secret-token\nPUBLIC_URL=https://example.com\nEMPTY=\n",
+      capabilities: [.textInput, .secondaryInput],
+      options: [
+        operationOption([("inspect", "Inspect"), ("compare", "Compare"), ("redact", "Redact")]),
+        ToolOption(
+          key: "secondaryInput",
+          label: "Compare .env",
+          kind: .text,
+          defaultValue: "API_KEY=changed-token\nDATABASE_URL=postgres://example\nPUBLIC_URL=https://example.com\n"
+        ),
+        ToolOption(key: "showValues", label: "Show values", kind: .boolean, defaultValue: "false")
+      ]
+    ),
+    ToolDefinition(
       id: .jsonFormatter,
       title: "JSON Formatter & Validator",
       subtitle: "Validate, format, minify, and normalize JSON.",

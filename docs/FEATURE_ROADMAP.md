@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 35 registered tools across ten categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
+Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 36 registered tools across ten categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
 
 Primary extension points:
 - Tool IDs/categories: `Sources/WorkbenchLabsCore/Models/ToolModels.swift`
@@ -28,13 +28,13 @@ Primary extension points:
 - Image Metadata Inspector: inspect EXIF/GPS/color metadata and write GPS-scrubbed safe-sharing copies.
 - Video Clip & Audio Extract: trim video by start/end, extract MP3/WAV/AAC, and generate thumbnails.
 - JSON Schema Validator: validate JSON documents against JSON Schema locally with bundled AJV and path-based errors.
+- .env Inspector & Comparator: inspect, compare, and redact `.env` files without leaking values by default.
 
 ## P1: High-Value Tools
 
 ### Developer Utilities
 
-1. `.env` Inspector & Comparator with redaction and missing-key detection.
-2. Git Diff/Ignore Helper using local `git`.
+1. Git Diff/Ignore Helper using local `git`.
 
 ### Security
 

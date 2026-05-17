@@ -40,6 +40,7 @@ public enum ToolID: String, CaseIterable, Codable, Identifiable, Sendable {
   case stringInspector
   case secretScanner
   case jsonSchemaValidator
+  case envInspector
   case jsonFormatter
   case htmlFormatter
   case cssFormatter
