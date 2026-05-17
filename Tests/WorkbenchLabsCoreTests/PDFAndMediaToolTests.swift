@@ -23,6 +23,20 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(result.output.contains(pdfURL.path), result.output)
   }
 
+  func testPDFToolkitInspectShowsMetadataFields() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata.pdf", pageCount: 2)
+
+    let result = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path)
+
+    XCTAssertTrue(result.output.contains("Title: Internal Roadmap"), result.output)
+    XCTAssertTrue(result.output.contains("Author: Workbench Labs"), result.output)
+    XCTAssertTrue(result.output.contains("Subject: Metadata Scrubber Test"), result.output)
+    XCTAssertTrue(result.output.contains("Creator: Workbench Test Suite"), result.output)
+    XCTAssertTrue(result.output.contains("Producer: "), result.output)
+    XCTAssertFalse(result.output.contains("Producer: -"), result.output)
+    XCTAssertTrue(result.output.contains("Keywords: private, draft"), result.output)
+  }
+
   func testPDFToolkitExtractsTextFromLocalPDF() async throws {
     let pdfURL = try makePDF(named: "text.pdf", text: "Workbench Labs PDF")
     var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
@@ -228,6 +242,42 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertEqual(PDFDocument(url: outputURL)?.pageCount, 5)
   }
 
+  func testPDFToolkitScrubsMetadataAndPreservesPages() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata-source.pdf", pageCount: 3)
+    let outputURL = tempURL(named: "metadata-scrubbed.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "scrubMetadata"
+    options.textValues["outputPath"] = outputURL.path
+
+    let result = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertEqual(outputDocument.pageCount, 3)
+    XCTAssertMetadataScrubbed(outputDocument)
+    XCTAssertTrue(result.output.contains(outputURL.path), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata), [outputURL])
+
+    let sourceDocument = try XCTUnwrap(PDFDocument(url: pdfURL))
+    XCTAssertEqual(metadataString(sourceDocument, .titleAttribute), "Internal Roadmap")
+  }
+
+  func testPDFToolkitScrubsOnlySelectedMetadataFields() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata-selective.pdf", pageCount: 1)
+    let outputURL = tempURL(named: "metadata-selective-scrubbed.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "scrubMetadata"
+    options.textValues["outputPath"] = outputURL.path
+    options.boolValues["scrubAuthor"] = false
+    options.boolValues["scrubSubject"] = false
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertTrue(metadataString(outputDocument, .titleAttribute).isEmpty)
+    XCTAssertEqual(metadataString(outputDocument, .authorAttribute), "Workbench Labs")
+    XCTAssertEqual(metadataString(outputDocument, .subjectAttribute), "Metadata Scrubber Test")
+  }
+
   func testPDFOCRExtractsTextFromImageBasedPDF() async throws {
     let pdfURL = try makeImageTextPDF(named: "ocr-image.pdf", text: "WORKBENCH OCR")
     var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
@@ -419,6 +469,50 @@ final class PDFAndMediaToolTests: XCTestCase {
     try pdfData.write(to: url)
     tempURLs.append(url)
     return url
+  }
+
+  private func makeMetadataPDF(named name: String, pageCount: Int) throws -> URL {
+    let url = try makePDF(named: name, pageCount: pageCount)
+    guard let document = PDFDocument(url: url) else {
+      throw CocoaError(.fileReadUnknown)
+    }
+    document.documentAttributes = [
+      PDFDocumentAttribute.titleAttribute: "Internal Roadmap",
+      PDFDocumentAttribute.authorAttribute: "Workbench Labs",
+      PDFDocumentAttribute.subjectAttribute: "Metadata Scrubber Test",
+      PDFDocumentAttribute.creatorAttribute: "Workbench Test Suite",
+      PDFDocumentAttribute.producerAttribute: "Workbench PDF Fixture",
+      PDFDocumentAttribute.keywordsAttribute: "private, draft"
+    ]
+    guard document.write(to: url) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    return url
+  }
+
+  private func XCTAssertMetadataScrubbed(_ document: PDFDocument, file: StaticString = #filePath, line: UInt = #line) {
+    let scrubbedAttributes: [PDFDocumentAttribute] = [
+      .titleAttribute,
+      .authorAttribute,
+      .subjectAttribute,
+      .creatorAttribute,
+      .producerAttribute,
+      .keywordsAttribute
+    ]
+    for attribute in scrubbedAttributes {
+      XCTAssertTrue(metadataString(document, attribute).isEmpty, "Expected \(attribute) to be scrubbed.", file: file, line: line)
+    }
+  }
+
+  private func metadataString(_ document: PDFDocument, _ attribute: PDFDocumentAttribute) -> String {
+    guard let value = document.documentAttributes?[attribute] else { return "" }
+    if let string = value as? String {
+      return string.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    if let strings = value as? [String] {
+      return strings.joined(separator: ", ").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    return String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   private func makePNG(named name: String) throws -> URL {

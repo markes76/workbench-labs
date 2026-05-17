@@ -23,12 +23,9 @@ Primary extension points:
 
 - PDF Page Editor: rotate, reorder, delete, extract ranges, and append pages with PDFKit.
 - PDF OCR Text Extractor: OCR scanned PDFs locally with Apple Vision/Tesseract, English/Hebrew language selection, and page-range selection.
+- PDF Metadata Scrubber: inspect metadata and write rebuilt PDFs with selected metadata fields blanked.
 
 ## P1: High-Value Tools
-
-### PDF & Documents
-
-1. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
 
 ### Media
 
