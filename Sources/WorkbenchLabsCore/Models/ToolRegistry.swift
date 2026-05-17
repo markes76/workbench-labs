@@ -370,7 +370,7 @@ public enum ToolRegistry {
     ToolDefinition(
       id: .pdfToolkit,
       title: "PDF Toolkit",
-      subtitle: "Inspect, extract text, merge, and split PDFs locally.",
+      subtitle: "Inspect, edit pages, merge, split, and extract PDFs locally.",
       category: .document,
       systemImage: "doc.richtext",
       inputPlaceholder: "Paste one PDF path per line, or drop PDF files...",
@@ -382,9 +382,17 @@ public enum ToolRegistry {
           ("inspect", "Inspect"),
           ("extractText", "Extract Text"),
           ("merge", "Merge"),
-          ("split", "Split Pages")
+          ("split", "Split Pages"),
+          ("extractPages", "Extract Pages"),
+          ("deletePages", "Delete Pages"),
+          ("reorderPages", "Reorder Pages"),
+          ("rotatePages", "Rotate Pages"),
+          ("appendPages", "Append Pages")
         ]),
         ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "rotation", label: "Rotation", kind: .picker, defaultValue: "90", choices: [
+          .init("90", "90 degrees"), .init("180", "180 degrees"), .init("270", "270 degrees")
+        ]),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: ""),
         ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
       ]

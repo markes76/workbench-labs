@@ -10,6 +10,6 @@ Add local PDF page editing: rotate, reorder, delete, extract ranges, and append 
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] User can choose PDF pages and apply rotate, reorder, delete, extract, and append operations.
-- [ ] Operations produce real PDF files beside the source file by default.
-- [ ] Tests validate page counts and operation results with generated fixture PDFs.
+- [x] User can choose PDF pages and apply rotate, reorder, delete, extract, and append operations.
+- [x] Operations produce real PDF files beside the source file by default.
+- [x] Tests validate page counts and operation results with generated fixture PDFs.
