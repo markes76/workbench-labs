@@ -19,13 +19,16 @@ Primary extension points:
 2. Extract a reusable `ExternalProcessRunner` for `ffmpeg`, `git`, `sqlite3`, `openssl`, `curl`, and other local binaries.
 3. Improve file-result handling with explicit output file URLs, Finder reveal actions, and shared save/open panels.
 
+## Recently Shipped
+
+- PDF Page Editor: rotate, reorder, delete, extract ranges, and append pages with PDFKit.
+
 ## P1: High-Value Tools
 
 ### PDF & Documents
 
-1. PDF Page Editor: rotate, reorder, delete, extract ranges, append pages with PDFKit.
-2. PDF OCR Text Extractor: OCR scanned PDFs with Vision and PDFKit page rendering.
-3. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
+1. PDF OCR Text Extractor: OCR scanned PDFs with Vision and PDFKit page rendering.
+2. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
 
 ### Media
 
@@ -74,4 +77,4 @@ Primary extension points:
 5. Add `ClipboardInspector` detection when useful.
 6. Add a custom SwiftUI view for multi-file or highly structured workflows.
 7. Add focused `WorkbenchLabsCore` tests and update registry count tests.
-8. Update README with local binary requirements.
+8. Update README, feature guide, and CHANGELOG for user-facing changes.
