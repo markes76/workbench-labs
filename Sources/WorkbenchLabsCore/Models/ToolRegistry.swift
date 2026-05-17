@@ -34,7 +34,7 @@ public enum ToolRegistry {
       id: .jwtDebugger,
       title: "JWT Debugger",
       subtitle: "Decode JSON Web Tokens and verify HS256/HS384/HS512 signatures.",
-      category: .inspect,
+      category: .security,
       systemImage: "key.viewfinder",
       inputPlaceholder: "Paste a JWT...",
       sampleInput: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRldiBXb3JrYmVuY2giLCJpYXQiOjE1MTYyMzkwMjJ9.invalid",
@@ -95,13 +95,33 @@ public enum ToolRegistry {
       id: .secretScanner,
       title: "Secret Scanner & Redactor",
       subtitle: "Find and redact tokens, private keys, credentials, and secret-looking config values.",
-      category: .inspect,
+      category: .security,
       systemImage: "shield.lefthalf.filled.badge.checkmark",
       inputPlaceholder: "Paste logs, headers, .env files, stack traces, or config...",
       primaryActionTitle: "Scan",
       sampleInput: "API_KEY=EXAMPLE_API_KEY_DO_NOT_USE\nAuthorization: Bearer EXAMPLE_TOKEN_DO_NOT_USE\nDATABASE_URL=postgres://user:password@example.com/app",
       options: [
         operationOption([("scan", "Scan"), ("redact", "Redact")], defaultValue: "scan")
+      ]
+    ),
+    ToolDefinition(
+      id: .jsonSchemaValidator,
+      title: "JSON Schema Validator",
+      subtitle: "Validate JSON documents against JSON Schema locally with bundled AJV.",
+      category: .developer,
+      systemImage: "checklist.checked",
+      inputPlaceholder: "Paste JSON to validate...",
+      primaryActionTitle: "Validate",
+      sampleInput: #"{"name":"Workbench Labs","count":3}"#,
+      capabilities: [.textInput, .secondaryInput],
+      options: [
+        ToolOption(
+          key: "secondaryInput",
+          label: "Schema",
+          kind: .text,
+          defaultValue: #"{"type":"object","required":["name","count"],"properties":{"name":{"type":"string"},"count":{"type":"integer","minimum":1}}}"#
+        ),
+        ToolOption(key: "strictSchema", label: "Strict schema", kind: .boolean, defaultValue: "false")
       ]
     ),
     ToolDefinition(
@@ -260,7 +280,7 @@ public enum ToolRegistry {
       id: .urlCodec,
       title: "URL Encoder & Decoder",
       subtitle: "Percent-encode and decode URL components.",
-      category: .encode,
+      category: .apiNetwork,
       systemImage: "link",
       inputPlaceholder: "Paste URL text...",
       sampleInput: "hello world?x=1&y=two words",
@@ -286,7 +306,7 @@ public enum ToolRegistry {
       id: .queryParser,
       title: "Query String & URL Parser",
       subtitle: "Parse URLs and query strings into structured JSON.",
-      category: .encode,
+      category: .apiNetwork,
       systemImage: "list.bullet.rectangle",
       inputPlaceholder: "Paste a URL or query string...",
       sampleInput: "https://example.com/search?q=dev%20tools&page=1"
@@ -356,7 +376,7 @@ public enum ToolRegistry {
       id: .hashGenerator,
       title: "Hash Generator",
       subtitle: "Generate MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes.",
-      category: .generate,
+      category: .security,
       systemImage: "number.square",
       inputPlaceholder: "Paste text to hash...",
       sampleInput: "WorkbenchLabs",
@@ -370,7 +390,7 @@ public enum ToolRegistry {
     ToolDefinition(
       id: .pdfToolkit,
       title: "PDF Toolkit",
-      subtitle: "Inspect, extract text, merge, and split PDFs locally.",
+      subtitle: "Inspect, scrub metadata, edit pages, merge, split, and extract PDFs locally.",
       category: .document,
       systemImage: "doc.richtext",
       inputPlaceholder: "Paste one PDF path per line, or drop PDF files...",
@@ -382,11 +402,47 @@ public enum ToolRegistry {
           ("inspect", "Inspect"),
           ("extractText", "Extract Text"),
           ("merge", "Merge"),
-          ("split", "Split Pages")
+          ("split", "Split Pages"),
+          ("extractPages", "Extract Pages"),
+          ("deletePages", "Delete Pages"),
+          ("reorderPages", "Reorder Pages"),
+          ("rotatePages", "Rotate Pages"),
+          ("appendPages", "Append Pages"),
+          ("scrubMetadata", "Scrub Metadata")
         ]),
         ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "rotation", label: "Rotation", kind: .picker, defaultValue: "90", choices: [
+          .init("90", "90 degrees"), .init("180", "180 degrees"), .init("270", "270 degrees")
+        ]),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: ""),
-        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: ""),
+        ToolOption(key: "scrubTitle", label: "Scrub title", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubAuthor", label: "Scrub author", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubSubject", label: "Scrub subject", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubCreator", label: "Scrub creator", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubProducer", label: "Scrub producer", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubKeywords", label: "Scrub keywords", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubCreationDate", label: "Scrub creation date", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubModificationDate", label: "Scrub modification date", kind: .boolean, defaultValue: "true")
+      ]
+    ),
+    ToolDefinition(
+      id: .pdfOCR,
+      title: "PDF OCR Text Extractor",
+      subtitle: "Extract English and Hebrew text from scanned PDFs locally.",
+      category: .document,
+      systemImage: "text.viewfinder",
+      inputPlaceholder: "Paste or drop one PDF path...",
+      primaryActionTitle: "Run OCR",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "languages", label: "Language", kind: .picker, defaultValue: "en", choices: [
+          .init("en", "English"),
+          .init("he", "Hebrew"),
+          .init("en-he", "English + Hebrew")
+        ])
       ]
     ),
     ToolDefinition(
@@ -409,6 +465,55 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .batchImageResizer,
+      title: "Batch Image Resizer & Compressor",
+      subtitle: "Resize, compress, and strip metadata from multiple images locally.",
+      category: .media,
+      systemImage: "rectangle.resize",
+      inputPlaceholder: "Paste one image path per line, or drop image files...",
+      primaryActionTitle: "Process Images",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        ToolOption(key: "resizeMode", label: "Resize", kind: .picker, defaultValue: "max", choices: [
+          .init("none", "No resize"),
+          .init("width", "Width"),
+          .init("height", "Height"),
+          .init("max", "Max dimension"),
+          .init("scale", "Scale percent")
+        ]),
+        ToolOption(key: "width", label: "Width", kind: .integer, defaultValue: "1024", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "height", label: "Height", kind: .integer, defaultValue: "1024", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "maxDimension", label: "Max dimension", kind: .integer, defaultValue: "1600", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "scalePercent", label: "Scale", kind: .integer, defaultValue: "50", minimumValue: 1, maximumValue: 1000),
+        ToolOption(key: "outputFormat", label: "Format", kind: .picker, defaultValue: "jpeg", choices: [
+          .init("original", "Original"), .init("png", "PNG"), .init("jpeg", "JPEG"), .init("heic", "HEIC"), .init("tiff", "TIFF")
+        ]),
+        ToolOption(key: "quality", label: "Quality", kind: .integer, defaultValue: "82", minimumValue: 1, maximumValue: 100),
+        ToolOption(key: "stripMetadata", label: "Strip metadata", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+      ]
+    ),
+    ToolDefinition(
+      id: .imageMetadataInspector,
+      title: "Image Metadata Inspector",
+      subtitle: "Inspect image metadata and remove GPS location data before sharing.",
+      category: .media,
+      systemImage: "location.slash",
+      inputPlaceholder: "Paste or drop one or more image file paths...",
+      primaryActionTitle: "Process Images",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        operationOption([("inspect", "Inspect"), ("scrub", "Scrub")]),
+        ToolOption(key: "removeGPS", label: "Remove GPS location", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "removeCameraMetadata", label: "Remove camera metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "removeDescriptiveMetadata", label: "Remove descriptive metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "removeAllMetadata", label: "Remove all metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+      ]
+    ),
+    ToolDefinition(
       id: .videoConverter,
       title: "Video Converter",
       subtitle: "Inspect and transcode video locally with ffmpeg when installed.",
@@ -419,10 +524,14 @@ public enum ToolRegistry {
       sampleInput: "",
       capabilities: [.textInput, .fileInput],
       options: [
-        operationOption([("info", "Info"), ("convert", "Convert")]),
+        operationOption([("info", "Info"), ("convert", "Convert"), ("extractAudio", "Extract Audio"), ("thumbnail", "Thumbnail")]),
         ToolOption(key: "outputFormat", label: "Format", kind: .picker, defaultValue: "mp4", choices: [
-          .init("mp4", "MP4"), .init("mov", "MOV"), .init("webm", "WebM"), .init("gif", "GIF"), .init("mp3", "MP3")
+          .init("mp4", "MP4"), .init("mov", "MOV"), .init("webm", "WebM"), .init("gif", "GIF"),
+          .init("mp3", "MP3"), .init("wav", "WAV"), .init("aac", "AAC"),
+          .init("jpg", "JPG"), .init("png", "PNG")
         ]),
+        ToolOption(key: "startTime", label: "Start", kind: .text, defaultValue: "", help: "Seconds or HH:MM:SS"),
+        ToolOption(key: "endTime", label: "End", kind: .text, defaultValue: "", help: "Seconds or HH:MM:SS"),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: "")
       ]
     )

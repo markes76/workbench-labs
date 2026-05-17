@@ -34,6 +34,8 @@ public final class ToolRunner: @unchecked Sendable {
       return stringInspector(input)
     case .secretScanner:
       return try secretScanner(input, options: options)
+    case .jsonSchemaValidator:
+      return try jsRunner.run(tool: "json-schema", input: input, options: options)
     case .jsonFormatter:
       return try json(input, options: options)
     case .htmlFormatter:
@@ -76,8 +78,14 @@ public final class ToolRunner: @unchecked Sendable {
       return hash(input, options: options)
     case .pdfToolkit:
       return try PDFToolkit.run(input: input, options: options)
+    case .pdfOCR:
+      return try PDFOCRExtractor.run(input: input, options: options)
     case .imageConverter:
       return try ImageConverter.run(input: input, options: options)
+    case .batchImageResizer:
+      return try BatchImageResizer.run(input: input, options: options)
+    case .imageMetadataInspector:
+      return try ImageMetadataInspector.run(input: input, options: options)
     case .videoConverter:
       return try VideoConverter.run(input: input, options: options)
     }

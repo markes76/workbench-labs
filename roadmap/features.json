@@ -119,9 +119,9 @@
     "branch": "feature/image-metadata-inspector",
     "summary": "Inspect and optionally scrub EXIF, GPS, color profile, and common image metadata.",
     "acceptance": [
-      "Image Converter inspect output includes common metadata sections.",
+      "Image Metadata Inspector output includes common metadata sections.",
       "Scrub mode writes a metadata-reduced copy where supported.",
-      "Tests cover metadata-free and metadata-present images."
+      "Tests cover metadata-present images and GPS removal."
     ],
     "tests": ["swift test"]
   },
