@@ -10,6 +10,6 @@ Remove title, author, subject, producer, and other metadata from PDFs.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Inspect mode shows metadata fields before scrubbing.
-- [ ] Scrub mode writes a new PDF without selected metadata fields.
-- [ ] Tests verify metadata removal and page preservation.
+- [x] Inspect mode shows metadata fields before scrubbing.
+- [x] Scrub mode writes a new PDF without selected metadata fields.
+- [x] Tests verify metadata removal and page preservation.

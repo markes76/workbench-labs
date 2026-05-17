@@ -10,6 +10,14 @@ struct PDFToolkitView: View {
   @State private var splitMode = "all"
   @State private var selectedPages = "1"
   @State private var rotationDegrees = "90"
+  @State private var scrubTitle = true
+  @State private var scrubAuthor = true
+  @State private var scrubSubject = true
+  @State private var scrubCreator = true
+  @State private var scrubProducer = true
+  @State private var scrubKeywords = true
+  @State private var scrubCreationDate = true
+  @State private var scrubModificationDate = true
   @State private var outputDirectoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
   @State private var mergeOutputURL: URL?
   @State private var output = ""
@@ -38,7 +46,7 @@ struct PDFToolkitView: View {
   private var header: some View {
     ToolWorkspaceHeader(
       title: "PDF Toolkit",
-      subtitle: "Inspect, extract text, merge, split, edit, and append PDF pages into real files.",
+      subtitle: "Inspect, scrub metadata, extract text, merge, split, edit, and append PDF pages into real files.",
       systemImage: "doc.richtext"
     ) {
       if isRunning {
@@ -132,6 +140,7 @@ struct PDFToolkitView: View {
           Text("Reorder Pages").tag("reorderPages")
           Text("Rotate Pages").tag("rotatePages")
           Text("Append Pages").tag("appendPages")
+          Text("Scrub Metadata").tag("scrubMetadata")
         }
         .pickerStyle(.menu)
         .frame(width: 220)
@@ -184,6 +193,24 @@ struct PDFToolkitView: View {
           TextField("New page order, for example 3,1,2,4-6", text: $selectedPages)
             .textFieldStyle(.roundedBorder)
           Text("Only pages listed here are written to the new PDF, in this exact order.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+      } else if operation == "scrubMetadata" {
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Remove Fields")
+            .font(.subheadline.weight(.semibold))
+          LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
+            Toggle("Title", isOn: $scrubTitle)
+            Toggle("Author", isOn: $scrubAuthor)
+            Toggle("Subject", isOn: $scrubSubject)
+            Toggle("Creator", isOn: $scrubCreator)
+            Toggle("Producer", isOn: $scrubProducer)
+            Toggle("Keywords", isOn: $scrubKeywords)
+            Toggle("Creation date", isOn: $scrubCreationDate)
+            Toggle("Modified date", isOn: $scrubModificationDate)
+          }
+          Text("The scrubbed PDF is written as a new file; the original stays unchanged.")
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -290,6 +317,7 @@ struct PDFToolkitView: View {
     case "reorderPages": "Reorder"
     case "rotatePages": "Rotate"
     case "appendPages": "Append"
+    case "scrubMetadata": "Scrub"
     default: "Inspect"
     }
   }
@@ -303,6 +331,9 @@ struct PDFToolkitView: View {
     if ["deletePages", "reorderPages"].contains(operation) {
       return !selectedPages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+    if operation == "scrubMetadata" {
+      return scrubTitle || scrubAuthor || scrubSubject || scrubCreator || scrubProducer || scrubKeywords || scrubCreationDate || scrubModificationDate
+    }
     if ["extractPages", "rotatePages"].contains(operation), splitMode == "selected" {
       return !selectedPages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -314,7 +345,7 @@ struct PDFToolkitView: View {
   }
 
   private var usesOutputFile: Bool {
-    ["merge", "extractPages", "deletePages", "reorderPages", "rotatePages", "appendPages"].contains(operation)
+    ["merge", "extractPages", "deletePages", "reorderPages", "rotatePages", "appendPages", "scrubMetadata"].contains(operation)
   }
 
   private var suggestedOutputURL: URL? {
@@ -327,6 +358,7 @@ struct PDFToolkitView: View {
     case "reorderPages": suffix = "reordered"
     case "rotatePages": suffix = "rotated"
     case "appendPages": suffix = "appended"
+    case "scrubMetadata": suffix = "metadata-scrubbed"
     default: suffix = "output"
     }
     return firstURL
@@ -344,6 +376,14 @@ struct PDFToolkitView: View {
     selectedPages = session.options.textValues["pages"] ?? "1"
     splitMode = selectedPages.lowercased() == "all" ? "all" : "selected"
     rotationDegrees = session.options.textValues["rotation"] ?? "90"
+    scrubTitle = session.options.boolValues["scrubTitle"] ?? true
+    scrubAuthor = session.options.boolValues["scrubAuthor"] ?? true
+    scrubSubject = session.options.boolValues["scrubSubject"] ?? true
+    scrubCreator = session.options.boolValues["scrubCreator"] ?? true
+    scrubProducer = session.options.boolValues["scrubProducer"] ?? true
+    scrubKeywords = session.options.boolValues["scrubKeywords"] ?? true
+    scrubCreationDate = session.options.boolValues["scrubCreationDate"] ?? true
+    scrubModificationDate = session.options.boolValues["scrubModificationDate"] ?? true
     if let folder = session.options.textValues["outputDirectory"], !folder.isEmpty {
       outputDirectoryURL = URL(fileURLWithPath: NSString(string: folder).expandingTildeInPath)
     }
@@ -399,6 +439,14 @@ struct PDFToolkitView: View {
       options.textValues["pages"] = selectedPages
     }
     options.textValues["rotation"] = rotationDegrees
+    options.boolValues["scrubTitle"] = scrubTitle
+    options.boolValues["scrubAuthor"] = scrubAuthor
+    options.boolValues["scrubSubject"] = scrubSubject
+    options.boolValues["scrubCreator"] = scrubCreator
+    options.boolValues["scrubProducer"] = scrubProducer
+    options.boolValues["scrubKeywords"] = scrubKeywords
+    options.boolValues["scrubCreationDate"] = scrubCreationDate
+    options.boolValues["scrubModificationDate"] = scrubModificationDate
     if let outputDirectoryURL {
       options.textValues["outputDirectory"] = outputDirectoryURL.path
     }

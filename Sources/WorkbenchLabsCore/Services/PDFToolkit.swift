@@ -46,6 +46,12 @@ public enum PDFToolkit {
       )
     case "appendPages":
       return try appendPages(input: input, outputPath: options.textValues["outputPath"])
+    case "scrubMetadata":
+      return try scrubMetadata(
+        input: input,
+        outputPath: options.textValues["outputPath"],
+        options: options
+      )
     default:
       return try inspect(input: input)
     }
@@ -58,6 +64,11 @@ public enum PDFToolkit {
       let title = document.documentAttributes?[PDFDocumentAttribute.titleAttribute] as? String
       let author = document.documentAttributes?[PDFDocumentAttribute.authorAttribute] as? String
       let subject = document.documentAttributes?[PDFDocumentAttribute.subjectAttribute] as? String
+      let creator = metadataString(document, .creatorAttribute)
+      let producer = metadataString(document, .producerAttribute)
+      let keywords = metadataString(document, .keywordsAttribute)
+      let created = metadataString(document, .creationDateAttribute)
+      let modified = metadataString(document, .modificationDateAttribute)
       return """
       File: \(url.path)
       Pages: \(document.pageCount)
@@ -66,6 +77,11 @@ public enum PDFToolkit {
       Title: \(title?.nilIfEmpty ?? "-")
       Author: \(author?.nilIfEmpty ?? "-")
       Subject: \(subject?.nilIfEmpty ?? "-")
+      Creator: \(creator.nilIfEmpty ?? "-")
+      Producer: \(producer.nilIfEmpty ?? "-")
+      Keywords: \(keywords.nilIfEmpty ?? "-")
+      Created: \(created.nilIfEmpty ?? "-")
+      Modified: \(modified.nilIfEmpty ?? "-")
       """
     }.joined(separator: "\n\n")
 
@@ -283,6 +299,34 @@ public enum PDFToolkit {
     )
   }
 
+  private static func scrubMetadata(input: String, outputPath: String?, options: ToolOptions) throws -> ToolResult {
+    let (sourceURL, document) = try singleDocument(from: input)
+    let outputDocument = PDFDocument()
+    for pageIndex in 0..<document.pageCount {
+      try outputDocument.insertCopiedPage(from: document, at: pageIndex, insertionIndex: outputDocument.pageCount)
+    }
+
+    var attributes = document.documentAttributes ?? [:]
+    let selectedFields = metadataScrubFields.filter { shouldScrub($0.optionKey, options: options) }
+    for field in selectedFields {
+      attributes[field.attribute] = ""
+    }
+    outputDocument.documentAttributes = attributes
+
+    let outputURL = try write(
+      outputDocument,
+      requestedOutputPath: outputPath,
+      defaultOutputURL: defaultEditedOutputURL(for: sourceURL, suffix: "metadata-scrubbed")
+    )
+    try blankMetadataFields(in: outputURL, fields: selectedFields)
+    let labels = selectedFields.map(\.label).joined(separator: ", ")
+    return fileResult(
+      output: "Scrubbed \(labels.isEmpty ? "no" : labels) metadata fields into:\n\(outputURL.path)",
+      outputURL: outputURL,
+      sourceFileCount: 1
+    )
+  }
+
   private static func openDocument(_ url: URL) throws -> PDFDocument {
     guard let document = PDFDocument(url: url) else {
       throw ToolEngineError.invalidInput("Could not open PDF: \(url.path)")
@@ -375,6 +419,53 @@ public enum PDFToolkit {
       .appendingPathComponent("\(sourceURL.deletingPathExtension().lastPathComponent)-\(suffix).pdf")
   }
 
+  private static func metadataString(_ document: PDFDocument, _ attribute: PDFDocumentAttribute) -> String {
+    guard let value = document.documentAttributes?[attribute] else { return "" }
+    if let string = value as? String {
+      return string.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    if let strings = value as? [String] {
+      return strings.joined(separator: ", ").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    if let date = value as? Date {
+      return ISO8601DateFormatter().string(from: date)
+    }
+    return String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private static func shouldScrub(_ key: String, options: ToolOptions) -> Bool {
+    options.boolValues[key] ?? true
+  }
+
+  private static func blankMetadataFields(in url: URL, fields: [PDFMetadataScrubField]) throws {
+    guard !fields.isEmpty else { return }
+    let data = try Data(contentsOf: url)
+    guard var pdfText = String(data: data, encoding: .isoLatin1) else { return }
+
+    for field in fields {
+      pdfText = try blankPDFValue(named: field.pdfName, in: pdfText, pattern: #"(/__NAME__\s*)\(((?:\\.|[^\\)])*)\)"#)
+      pdfText = try blankPDFValue(named: field.pdfName, in: pdfText, pattern: #"(/__NAME__\s*)<([^>]*)>"#)
+    }
+
+    guard let outputData = pdfText.data(using: .isoLatin1), outputData.count == data.count else {
+      throw ToolEngineError.invalidInput("Could not safely scrub PDF metadata while preserving file structure.")
+    }
+    try outputData.write(to: url)
+  }
+
+  private static func blankPDFValue(named name: String, in text: String, pattern: String) throws -> String {
+    let escapedName = NSRegularExpression.escapedPattern(for: name)
+    let regex = try NSRegularExpression(pattern: pattern.replacingOccurrences(of: "__NAME__", with: escapedName))
+    var result = text
+    let range = NSRange(result.startIndex..<result.endIndex, in: result)
+    for match in regex.matches(in: result, range: range).reversed() {
+      let valueRange = match.range(at: 2)
+      guard let swiftRange = Range(valueRange, in: result) else { continue }
+      result.replaceSubrange(swiftRange, with: String(repeating: " ", count: valueRange.length))
+    }
+    return result
+  }
+
   private static func write(_ document: PDFDocument, requestedOutputPath: String?, defaultOutputURL: URL) throws -> URL {
     let requestedOutputURL: URL
     if let outputPath = requestedOutputPath?.nilIfEmpty, outputPath != defaultConfiguredOutputPath {
@@ -412,10 +503,28 @@ public enum PDFToolkit {
   - Reorder Pages: save pages in a custom order
   - Rotate Pages: rotate selected pages
   - Append Pages: append pages from additional PDFs
+  - Scrub Metadata: remove selected document metadata fields and save a new PDF
   """
 
   private static let defaultConfiguredOutputPath = "~/Desktop/workbench-labs-output.pdf"
   private static let defaultConfiguredOutputDirectory = "~/Desktop"
+  private static let metadataScrubFields = [
+    PDFMetadataScrubField(optionKey: "scrubTitle", label: "title", attribute: .titleAttribute, pdfName: "Title"),
+    PDFMetadataScrubField(optionKey: "scrubAuthor", label: "author", attribute: .authorAttribute, pdfName: "Author"),
+    PDFMetadataScrubField(optionKey: "scrubSubject", label: "subject", attribute: .subjectAttribute, pdfName: "Subject"),
+    PDFMetadataScrubField(optionKey: "scrubCreator", label: "creator", attribute: .creatorAttribute, pdfName: "Creator"),
+    PDFMetadataScrubField(optionKey: "scrubProducer", label: "producer", attribute: .producerAttribute, pdfName: "Producer"),
+    PDFMetadataScrubField(optionKey: "scrubKeywords", label: "keywords", attribute: .keywordsAttribute, pdfName: "Keywords"),
+    PDFMetadataScrubField(optionKey: "scrubCreationDate", label: "creation date", attribute: .creationDateAttribute, pdfName: "CreationDate"),
+    PDFMetadataScrubField(optionKey: "scrubModificationDate", label: "modification date", attribute: .modificationDateAttribute, pdfName: "ModDate")
+  ]
+}
+
+private struct PDFMetadataScrubField {
+  var optionKey: String
+  var label: String
+  var attribute: PDFDocumentAttribute
+  var pdfName: String
 }
 
 private extension String {

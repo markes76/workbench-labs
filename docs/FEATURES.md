@@ -290,12 +290,13 @@ Key features:
 
 ### PDF Toolkit
 
-Inspects, extracts text, merges, splits, and edits PDF pages locally.
+Inspects, extracts text, scrubs metadata, merges, splits, and edits PDF pages locally.
 
 Key features:
 - Add or drop PDF files.
-- Inspect PDF page count and document properties.
+- Inspect PDF page count, document properties, and metadata fields including title, author, subject, creator, producer, keywords, and dates.
 - Extract selectable text.
+- Scrub selected metadata fields into a new PDF while preserving the original file.
 - Merge multiple PDFs.
 - Split all pages or selected page ranges such as `1-2, 5, 8`.
 - Extract selected pages into one PDF.
@@ -345,4 +346,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include PDF metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

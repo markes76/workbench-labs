@@ -370,7 +370,7 @@ public enum ToolRegistry {
     ToolDefinition(
       id: .pdfToolkit,
       title: "PDF Toolkit",
-      subtitle: "Inspect, edit pages, merge, split, and extract PDFs locally.",
+      subtitle: "Inspect, scrub metadata, edit pages, merge, split, and extract PDFs locally.",
       category: .document,
       systemImage: "doc.richtext",
       inputPlaceholder: "Paste one PDF path per line, or drop PDF files...",
@@ -387,14 +387,23 @@ public enum ToolRegistry {
           ("deletePages", "Delete Pages"),
           ("reorderPages", "Reorder Pages"),
           ("rotatePages", "Rotate Pages"),
-          ("appendPages", "Append Pages")
+          ("appendPages", "Append Pages"),
+          ("scrubMetadata", "Scrub Metadata")
         ]),
         ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
         ToolOption(key: "rotation", label: "Rotation", kind: .picker, defaultValue: "90", choices: [
           .init("90", "90 degrees"), .init("180", "180 degrees"), .init("270", "270 degrees")
         ]),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: ""),
-        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: ""),
+        ToolOption(key: "scrubTitle", label: "Scrub title", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubAuthor", label: "Scrub author", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubSubject", label: "Scrub subject", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubCreator", label: "Scrub creator", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubProducer", label: "Scrub producer", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubKeywords", label: "Scrub keywords", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubCreationDate", label: "Scrub creation date", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "scrubModificationDate", label: "Scrub modification date", kind: .boolean, defaultValue: "true")
       ]
     ),
     ToolDefinition(
