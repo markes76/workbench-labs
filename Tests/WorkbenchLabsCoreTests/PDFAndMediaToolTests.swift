@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import PDFKit
 import XCTest
 @testable import WorkbenchLabsCore
@@ -65,6 +66,46 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(converted.output.contains(outputURL.path), converted.output)
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path))
     XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: converted.metadata), [outputURL])
+  }
+
+  func testBatchImageResizerProcessesMultipleImagesBesideSource() async throws {
+    let firstURL = try makePNG(named: "batch-a.png", size: CGSize(width: 12, height: 8))
+    let secondURL = try makePNG(named: "batch-b.png", size: CGSize(width: 20, height: 10))
+    var options = ToolRegistry.definition(for: .batchImageResizer).defaultOptions
+    options.textValues["resizeMode"] = "max"
+    options.intValues["maxDimension"] = 6
+    options.textValues["outputFormat"] = "png"
+
+    let result = try await runner.run(toolID: .batchImageResizer, input: "\(firstURL.path)\n\(secondURL.path)", options: options)
+
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 2, result.output)
+    XCTAssertEqual(outputURLs[0].deletingLastPathComponent(), firstURL.deletingLastPathComponent())
+    XCTAssertEqual(imagePixelSize(outputURLs[0]), CGSize(width: 6, height: 4))
+    XCTAssertEqual(imagePixelSize(outputURLs[1]), CGSize(width: 6, height: 3))
+  }
+
+  func testBatchImageResizerScaleModeUsesOutputFolderAndAvoidsOverwrites() async throws {
+    let inputURL = try makePNG(named: "batch-overwrite.png", size: CGSize(width: 10, height: 6))
+    let outputDirectoryURL = try tempDirectory(named: "batch-output")
+    let existingURL = outputDirectoryURL.appendingPathComponent("batch-overwrite-resized.jpg")
+    try Data("existing".utf8).write(to: existingURL)
+
+    var options = ToolRegistry.definition(for: .batchImageResizer).defaultOptions
+    options.textValues["resizeMode"] = "scale"
+    options.intValues["scalePercent"] = 50
+    options.textValues["outputFormat"] = "jpeg"
+    options.textValues["outputDirectory"] = outputDirectoryURL.path
+    options.boolValues["stripMetadata"] = true
+
+    let result = try await runner.run(toolID: .batchImageResizer, input: inputURL.path, options: options)
+
+    XCTAssertEqual(try Data(contentsOf: existingURL), Data("existing".utf8))
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 1, result.output)
+    XCTAssertNotEqual(outputURLs[0], existingURL)
+    XCTAssertTrue(outputURLs[0].path.hasPrefix(outputDirectoryURL.path), result.output)
+    XCTAssertEqual(imagePixelSize(outputURLs[0]), CGSize(width: 5, height: 3))
   }
 
   func testPDFToolkitSplitsSelectedPagesIntoRealOnePagePDFs() async throws {
@@ -367,7 +408,7 @@ final class PDFAndMediaToolTests: XCTestCase {
   }
 
   func testNewDocumentAndMediaToolsHaveHelpfulEmptyInputOutput() async throws {
-    for toolID in [ToolID.pdfToolkit, .imageConverter, .videoConverter] {
+    for toolID in [ToolID.pdfToolkit, .imageConverter, .batchImageResizer, .videoConverter] {
       let result = try await runner.run(toolID: toolID, input: "")
       XCTAssertFalse(result.output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(toolID.rawValue) help output was empty")
     }
@@ -515,12 +556,12 @@ final class PDFAndMediaToolTests: XCTestCase {
     return String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  private func makePNG(named name: String) throws -> URL {
+  private func makePNG(named name: String, size: CGSize = CGSize(width: 8, height: 6)) throws -> URL {
     let url = tempURL(named: name)
-    let image = NSImage(size: NSSize(width: 8, height: 6))
+    let image = NSImage(size: NSSize(width: size.width, height: size.height))
     image.lockFocus()
     NSColor.systemBlue.setFill()
-    NSRect(x: 0, y: 0, width: 8, height: 6).fill()
+    NSRect(x: 0, y: 0, width: size.width, height: size.height).fill()
     image.unlockFocus()
     guard
       let tiff = image.tiffRepresentation,
@@ -532,6 +573,17 @@ final class PDFAndMediaToolTests: XCTestCase {
     try png.write(to: url)
     tempURLs.append(url)
     return url
+  }
+
+  private func imagePixelSize(_ url: URL) -> CGSize? {
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+          let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+          let height = properties[kCGImagePropertyPixelHeight] as? CGFloat
+    else {
+      return nil
+    }
+    return CGSize(width: width, height: height)
   }
 
   private func makeImageTextPDF(named name: String, text: String, fontSize: CGFloat = 72) throws -> URL {

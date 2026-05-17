@@ -10,6 +10,6 @@ Resize, compress, strip metadata, and batch-convert images locally.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Users can process multiple image paths.
-- [ ] Resize by width, height, max dimension, or scale.
-- [ ] Output defaults beside each source image and avoids overwrites.
+- [x] Users can process multiple image paths.
+- [x] Resize by width, height, max dimension, or scale.
+- [x] Output defaults beside each source image and avoids overwrites.
