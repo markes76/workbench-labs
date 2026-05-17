@@ -1,9 +1,7 @@
-import Darwin
-import Dispatch
 import Foundation
 
 public enum VideoConverter {
-  private static let maxCapturedOutputBytes = 2 * 1024 * 1024
+  private static let processRunner = ExternalProcessRunner()
 
   public static func run(input: String, options: ToolOptions) throws -> ToolResult {
     guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -21,12 +19,12 @@ public enum VideoConverter {
 
   private static func info(input: String) throws -> ToolResult {
     let urls = try PathInput.existingFileURLs(from: input)
-    guard let ffprobe = executable(named: "ffprobe") else {
+    guard let ffprobe = processRunner.executable(named: "ffprobe") else {
       throw ToolEngineError.runtimeUnavailable("ffprobe is required for video inspection. Install ffmpeg locally and reopen Workbench Labs.")
     }
 
     let output = try urls.map { url in
-      let result = try runProcess(
+      let result = try runRequiredProcess(
         executableURL: ffprobe,
         arguments: ["-v", "error", "-show_format", "-show_streams", "-of", "json", url.path],
         timeout: 20
@@ -43,7 +41,7 @@ public enum VideoConverter {
   private static func convert(input: String, options: ToolOptions) throws -> ToolResult {
     let urls = try PathInput.existingFileURLs(from: input)
     guard let sourceURL = urls.first else { throw ToolEngineError.emptyInput }
-    guard let ffmpeg = executable(named: "ffmpeg") else {
+    guard let ffmpeg = processRunner.executable(named: "ffmpeg") else {
       throw ToolEngineError.runtimeUnavailable("ffmpeg is required for video conversion. Install ffmpeg locally and reopen Workbench Labs.")
     }
 
@@ -68,72 +66,21 @@ public enum VideoConverter {
       arguments += ["-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", temporaryURL.path]
     }
 
-    _ = try runProcess(executableURL: ffmpeg, arguments: arguments, timeout: 600)
+    _ = try runRequiredProcess(executableURL: ffmpeg, arguments: arguments, timeout: 600)
     try FileManager.default.moveItem(at: temporaryURL, to: outputURL)
     return ToolResult(output: "Converted video to \(format.uppercased()):\n\(outputURL.path)")
   }
 
-  private static func executable(named name: String) -> URL? {
-    let candidates = [
-      "/opt/homebrew/bin/\(name)",
-      "/usr/local/bin/\(name)",
-      "/usr/bin/\(name)"
-    ]
-    guard let path = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
-      return nil
-    }
-    return URL(fileURLWithPath: path)
-  }
-
-  private static func runProcess(executableURL: URL, arguments: [String], timeout: TimeInterval) throws -> String {
-    let outputFiles: ProcessOutputFiles
-    do {
-      outputFiles = try ProcessOutputFiles()
-    } catch {
-      throw ToolEngineError.runtimeUnavailable("Could not prepare process output capture: \(error.localizedDescription)")
-    }
-    defer { outputFiles.cleanup() }
-
-    let process = Process()
-    process.executableURL = executableURL
-    process.arguments = arguments
-    process.standardOutput = outputFiles.stdoutWritingHandle
-    process.standardError = outputFiles.stderrWritingHandle
-    let terminationSemaphore = DispatchSemaphore(value: 0)
-    process.terminationHandler = { _ in
-      terminationSemaphore.signal()
-    }
-
-    try process.run()
-    let didExit = terminationSemaphore.wait(timeout: .now() + timeout) == .success
-    if !didExit {
-      terminate(process, terminationSemaphore: terminationSemaphore)
-      outputFiles.closeWritingHandles()
-      let error = try outputFiles.readStderr(maxBytes: maxCapturedOutputBytes).stringValue
-      let detail = error.nilIfEmpty.map { " stderr: \($0)" } ?? ""
+  private static func runRequiredProcess(executableURL: URL, arguments: [String], timeout: TimeInterval) throws -> String {
+    let result = try processRunner.run(executableURL: executableURL, arguments: arguments, timeout: timeout)
+    if result.didTimeOut {
+      let detail = result.stderrString.nilIfEmpty.map { " stderr: \($0)" } ?? ""
       throw ToolEngineError.runtimeUnavailable("\(executableURL.lastPathComponent) timed out after \(Int(timeout))s.\(detail)")
     }
-
-    outputFiles.closeWritingHandles()
-    let output = try outputFiles.readStdout(maxBytes: maxCapturedOutputBytes)
-    let error = try outputFiles.readStderr(maxBytes: maxCapturedOutputBytes)
-    guard process.terminationStatus == 0 else {
-      throw ToolEngineError.invalidInput(error.stringValue.nilIfEmpty ?? "\(executableURL.lastPathComponent) failed.")
+    guard result.isSuccess else {
+      throw ToolEngineError.invalidInput(result.stderrString.nilIfEmpty ?? "\(executableURL.lastPathComponent) failed.")
     }
-    return output.stringValue.nilIfEmpty ?? error.stringValue
-  }
-
-  private static func terminate(_ process: Process, terminationSemaphore: DispatchSemaphore) {
-    if process.isRunning {
-      process.terminate()
-    }
-    if terminationSemaphore.wait(timeout: .now() + .milliseconds(500)) == .success {
-      return
-    }
-    if process.isRunning {
-      Darwin.kill(process.processIdentifier, SIGKILL)
-    }
-    _ = terminationSemaphore.wait(timeout: .now() + .seconds(1))
+    return result.preferredOutputString
   }
 
   private static func defaultOutputPath(for sourceURL: URL, format: String) -> String {
@@ -157,72 +104,5 @@ public enum VideoConverter {
 private extension String {
   var nilIfEmpty: String? {
     isEmpty ? nil : self
-  }
-}
-
-private struct CapturedProcessOutput {
-  var data: Data
-  var truncated: Bool
-
-  var stringValue: String {
-    let text = String(data: data, encoding: .utf8) ?? "<\(data.count) non-printing bytes>"
-    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    return truncated ? "\(trimmed)\n(output truncated)" : trimmed
-  }
-}
-
-private final class ProcessOutputFiles {
-  let stdoutWritingHandle: FileHandle
-  let stderrWritingHandle: FileHandle
-
-  private let directoryURL: URL
-  private let stdoutURL: URL
-  private let stderrURL: URL
-  private let fileManager: FileManager
-  private var didCloseWritingHandles = false
-
-  init(fileManager: FileManager = .default) throws {
-    self.fileManager = fileManager
-    directoryURL = fileManager.temporaryDirectory
-      .appendingPathComponent("WorkbenchLabsExternalProcess-\(UUID().uuidString)", isDirectory: true)
-    stdoutURL = directoryURL.appendingPathComponent("stdout")
-    stderrURL = directoryURL.appendingPathComponent("stderr")
-
-    try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-    try Data().write(to: stdoutURL)
-    try Data().write(to: stderrURL)
-    stdoutWritingHandle = try FileHandle(forWritingTo: stdoutURL)
-    stderrWritingHandle = try FileHandle(forWritingTo: stderrURL)
-  }
-
-  func closeWritingHandles() {
-    guard !didCloseWritingHandles else { return }
-    try? stdoutWritingHandle.close()
-    try? stderrWritingHandle.close()
-    didCloseWritingHandles = true
-  }
-
-  func readStdout(maxBytes: Int) throws -> CapturedProcessOutput {
-    try readOutput(at: stdoutURL, maxBytes: maxBytes)
-  }
-
-  func readStderr(maxBytes: Int) throws -> CapturedProcessOutput {
-    try readOutput(at: stderrURL, maxBytes: maxBytes)
-  }
-
-  func cleanup() {
-    closeWritingHandles()
-    try? fileManager.removeItem(at: directoryURL)
-  }
-
-  private func readOutput(at url: URL, maxBytes: Int) throws -> CapturedProcessOutput {
-    let readHandle = try FileHandle(forReadingFrom: url)
-    defer { try? readHandle.close() }
-
-    let data = try readHandle.read(upToCount: maxBytes + 1) ?? Data()
-    if data.count > maxBytes {
-      return CapturedProcessOutput(data: Data(data.prefix(maxBytes)), truncated: true)
-    }
-    return CapturedProcessOutput(data: data, truncated: false)
   }
 }
