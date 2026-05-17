@@ -2,10 +2,14 @@ import Foundation
 
 public enum ToolCategory: String, CaseIterable, Codable, Identifiable, Sendable {
   case inspect = "Inspect & Test"
+  case security = "Security"
   case format = "Format & Convert"
   case encode = "Encode & Decode"
+  case apiNetwork = "API & Network"
   case generate = "Generate & Crypto"
+  case developer = "Developer"
   case document = "PDF & Documents"
+  case database = "Databases"
   case media = "Image & Video"
 
   public var id: String { rawValue }
@@ -13,10 +17,14 @@ public enum ToolCategory: String, CaseIterable, Codable, Identifiable, Sendable 
   public var systemImage: String {
     switch self {
     case .inspect: "scope"
+    case .security: "lock.shield"
     case .format: "curlybraces"
     case .encode: "lock.open"
+    case .apiNetwork: "network"
     case .generate: "sparkles"
+    case .developer: "hammer"
     case .document: "doc.richtext"
+    case .database: "cylinder"
     case .media: "photo.on.rectangle.angled"
     }
   }
