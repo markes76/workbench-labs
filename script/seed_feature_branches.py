@@ -4,7 +4,7 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
-from roadmap_lib import issue_title, load_features, pr_body, repo_name, run, select_features
+from roadmap_lib import add_issue_labels, find_pr_by_branch, gh_api_json, load_features, pr_body, repo_name, run, select_features
 
 
 def remote_branch_exists(branch):
@@ -13,16 +13,7 @@ def remote_branch_exists(branch):
 
 
 def pr_exists(repo, branch):
-    result = run([
-        "gh", "pr", "list",
-        "--repo", repo,
-        "--head", branch,
-        "--base", "main",
-        "--state", "all",
-        "--json", "number,url",
-    ])
-    prs = json.loads(result.stdout)
-    return prs[0] if prs else None
+    return find_pr_by_branch(repo, branch, state="all")
 
 
 def create_branch(repo, feature):
@@ -53,17 +44,19 @@ def create_pr(repo, feature):
     if existing:
         print(f"integration PR exists for {branch}: {existing['url']}")
         return
-    result = run([
-        "gh", "pr", "create",
-        "--repo", repo,
-        "--base", "main",
-        "--head", branch,
-        "--draft",
-        "--title", f"[Feature] {feature['title']}",
-        "--body", pr_body(feature),
-        "--label", "roadmap,feature-integration,needs-human-review",
-    ])
-    print(result.stdout.strip())
+    pr = gh_api_json(
+        f"repos/{repo}/pulls",
+        method="POST",
+        data={
+            "base": "main",
+            "head": branch,
+            "draft": True,
+            "title": f"[Feature] {feature['title']}",
+            "body": pr_body(feature),
+        },
+    )
+    add_issue_labels(repo, pr["number"], ["roadmap", "feature-integration", "needs-human-review"])
+    print(pr["html_url"])
 
 
 def main():

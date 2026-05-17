@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
-from roadmap_lib import load_features, repo_name, run, select_features
+from roadmap_lib import find_pr_by_branch, gh_api_json, load_features, repo_name, run, select_features
 
 
 def main():
@@ -12,19 +12,10 @@ def main():
     args = parser.parse_args()
 
     feature = select_features(load_features(), args.feature_id)[0]
-    result = run([
-        "gh", "pr", "list",
-        "--repo", args.repo,
-        "--head", feature["branch"],
-        "--base", "main",
-        "--state", "open",
-        "--json", "number,isDraft,url,labels",
-    ])
-    prs = json.loads(result.stdout)
-    if not prs:
+    pr = find_pr_by_branch(args.repo, feature["branch"], state="open")
+    if not pr:
         raise SystemExit(f"No open integration PR found for {feature['branch']}")
 
-    pr = prs[0]
     label_names = {label["name"] for label in pr.get("labels", [])}
     if "approved-to-merge" not in label_names:
         raise SystemExit(
@@ -32,15 +23,17 @@ def main():
         )
 
     if pr["isDraft"]:
-        run(["gh", "pr", "ready", str(pr["number"]), "--repo", args.repo])
+        raise SystemExit(
+            f"Refusing to promote {feature['id']}: integration PR #{pr['number']} is still a draft. "
+            "Run script/approve_feature.py locally first."
+        )
 
-    run([
-        "gh", "pr", "merge",
-        str(pr["number"]),
-        "--repo", args.repo,
-        f"--{args.merge_method}",
-        "--delete-branch",
-    ])
+    gh_api_json(
+        f"repos/{args.repo}/pulls/{pr['number']}/merge",
+        method="PUT",
+        data={"merge_method": args.merge_method},
+    )
+    run(["gh", "api", "--method", "DELETE", f"repos/{args.repo}/git/refs/heads/{feature['branch']}"], check=False)
     print(f"promoted {feature['id']} via {pr['url']}")
 
 
