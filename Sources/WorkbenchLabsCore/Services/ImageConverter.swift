@@ -81,7 +81,10 @@ public enum ImageConverter {
     }
     try FileManager.default.moveItem(at: temporaryURL, to: outputURL)
 
-    return ToolResult(output: "Converted image to \(outputFormat.uppercased()):\n\(outputURL.path)")
+    return ToolResult(
+      output: "Converted image to \(outputFormat.uppercased()):\n\(outputURL.path)",
+      metadata: FileResultMetadata.metadata(generatedFileURLs: [outputURL])
+    )
   }
 
   private static func imageType(for format: String) -> UTType? {
