@@ -23,17 +23,84 @@ Workbench Labs is an open-source native macOS developer utility workbench. It is
 
 ![PDF and media tools](docs/assets/screenshots/pdf-media-tools.svg)
 
-## Included Tool Areas
+## Complete Feature Inventory
 
-- Inspect/Test: Unix time, regular expressions, JWTs, HTML preview, Markdown preview, text diff, string inspection, secret scanning
-- Format/Convert: JSON, HTML, CSS, JavaScript, XML, YAML/JSON, SQL, number bases, string case, HTML/SVG to JSX
-- Developer: JSON Schema validation with local AJV, .env inspection/comparison/redaction, and Git diff/ignore helpers
-- Encode/Decode: URL, Base64, query strings, HTML entities, backslash escaping
-- Generate/Crypto: UUID/ULID-style UUID workflows, Lorem Ipsum, QR code, hash generation
-- PDF & Documents: inspect PDFs, extract selectable text, scrub PDF metadata, OCR scanned PDFs locally in English and Hebrew, merge PDFs, split selected pages, extract page ranges into one PDF, delete pages, reorder pages, rotate pages, and append pages from other PDFs
-- Image & Video: inspect/convert images, batch resize/compress images, inspect/scrub image metadata and GPS location, trim/transcode video, extract MP3/WAV/AAC audio, and generate thumbnails
+Workbench Labs currently ships **37 local tools** across the app's searchable sidebar categories.
 
-See every tool and workflow in the [complete feature guide](docs/FEATURES.md).
+### Shared App Workflows
+
+- Searchable grouped sidebar for quickly finding tools.
+- Clipboard inspection, paste-from-clipboard buttons, copy output, and use-output-as-input flows.
+- Smart clipboard routing for JSON, JWTs, Base64, UUIDs, timestamps, query strings, encoded URLs, and HTML entities.
+- File open and drag/drop workflows for PDF, image, video, and QR-code files.
+- Menu bar access, macOS Services integration, per-tool local settings, and local-first execution.
+- Bundled offline JavaScript runtime for mature formatters, with Swift-native engines where practical.
+
+### Inspect & Test
+
+- **Unix Timestamp Converter**: converts Unix seconds, Unix milliseconds, ISO 8601 dates, and timestamp math into local time, UTC, relative time, Unix time, milliseconds, day/week/year fields, leap-year status, common local formats, and extra timezone rows.
+- **RegExp Tester**: tests a regular expression against input text, supports case-insensitive matching, and reports matches and capture groups.
+- **HTML Preview**: renders HTML locally in a locked-down WebView with JavaScript, navigation, and external requests disabled by default.
+- **Text Diff Checker**: compares original and changed text blocks with a JS-backed semantic diff engine.
+- **Markdown Preview**: renders Markdown to safe local HTML for documentation drafts and README snippets.
+- **String Inspector**: reports character count, Unicode scalar count, UTF-8 bytes, UTF-16 units, line count, escaped output, and Unicode scalar details.
+
+### Security
+
+- **JWT Debugger**: decodes JWT header/payload/signature segments, formats JSON, shows algorithm/signature details, and verifies HS256, HS384, and HS512 signatures when a session-only HMAC secret is provided.
+- **Secret Scanner & Redactor**: finds and optionally redacts API keys, bearer tokens, private keys, credentials, database URLs, and other secret-looking values.
+- **Hash Generator**: generates MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes, with an all-algorithms mode.
+
+### Developer
+
+- **JSON Schema Validator**: validates JSON documents against JSON Schema locally with bundled AJV, side-by-side document/schema editors, optional strict schema mode, and path-based validation errors.
+- **.env Inspector & Comparator**: parses `.env` files, lists keys, duplicate keys, invalid lines, and secret-looking entries, compares two `.env` blocks, and redacts values while preserving key names.
+- **Git Diff & Ignore Helper**: inspects repository status with read-only local git commands and tests `.gitignore` patterns, including wildcards, directory rules, anchored paths, and negated rules.
+
+### Format & Convert
+
+- **JSON Formatter & Validator**: validates, formats, repairs, minifies, sorts keys, supports JSON5 comments/trailing commas, preserves encoded strings/big numbers when compatible, and offers indentation controls.
+- **HTML Beautifier & Minifier**: beautifies or minifies HTML, including embedded CSS and JavaScript handling through the bundled runtime.
+- **CSS Beautifier & Minifier**: formats or compresses CSS with configurable indentation.
+- **JavaScript Beautifier & Minifier**: formats or compresses JavaScript with configurable indentation.
+- **XML Beautifier & Minifier**: formats or compacts XML and reports formatter syntax errors.
+- **YAML to JSON Converter**: converts YAML documents to formatted JSON with configurable indentation.
+- **JSON to YAML Converter**: converts JSON documents into YAML for configuration and deployment snippets.
+- **HTML/SVG to JSX Converter**: converts copied HTML or SVG markup into JSX with a configurable component name.
+- **SQL Formatter**: formats SQL for SQL, PostgreSQL, MySQL, and SQLite dialects with keyword-case and indentation controls.
+- **Number Base Converter**: converts integers between binary, octal, decimal, and hexadecimal, with auto-detection for `0b`, `0o`, and `0x` prefixes.
+- **String Case Converter**: converts words and identifiers to camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, and Title Case.
+
+### API & Network
+
+- **URL Encoder & Decoder**: percent-encodes and decodes URL components while preserving the expected URL structure behavior for component encoding.
+- **Query String & URL Parser**: parses full URLs or raw query strings into structured JSON with scheme, host, path, fragment, and decoded query items.
+
+### Encode & Decode
+
+- **Base64 String Encode/Decode**: encodes and decodes standard or URL-safe Base64, auto-detects UTF-8 Base64, strips data URL prefixes, removes trailing null bytes, and keeps explicit encode mode deterministic.
+- **HTML Entity Encoder & Decoder**: encodes and decodes named and numeric HTML entities for moving text between markup and plain text contexts.
+- **Backslash Escaper & Unescaper**: escapes and unescapes common string literal sequences such as newlines, tabs, quotes, backslashes, and control characters.
+
+### Generate & Crypto
+
+- **UUID Generator & Decoder**: generates multiple UUIDs or inspects an existing UUID's version, variant, normalized lowercase form, uppercase form, and URN form.
+- **Lorem Ipsum Generator**: generates placeholder words, sentences, or paragraphs, with count controls and optional seed words.
+- **QR Code Reader & Generator**: generates QR code PNG output from text or reads QR codes from image file paths.
+
+### PDF & Documents
+
+- **PDF Toolkit**: inspects PDFs, extracts selectable text, scrubs metadata, merges PDFs, splits all or selected pages, extracts page ranges into one PDF, deletes pages, reorders pages, rotates pages, appends pages from other PDFs, writes output beside the source by default, and reveals generated files in Finder.
+- **PDF OCR Text Extractor**: extracts text from scanned or image-based PDFs locally, supports English through Apple Vision and Hebrew or English+Hebrew through local Tesseract, supports page ranges, and reports processed pages, recognized lines, engine, languages, and confidence metadata.
+
+### Image & Video
+
+- **Image Converter**: inspects image dimensions, file size, type, and metadata, then converts to PNG, JPEG, HEIC, TIFF, or GIF with quality controls.
+- **Batch Image Resizer & Compressor**: resizes multiple images by width, height, maximum dimension, or scale percentage, converts formats, controls quality, optionally strips metadata, and writes collision-safe outputs beside source images or into a selected folder.
+- **Image Metadata Inspector**: inspects dimensions, frame count, DPI, color model, color profile, GPS metadata, privacy risk, and writes safer sharing copies with GPS metadata removed by default.
+- **Video Converter**: inspects video streams, metadata, duration, and codecs, converts to MP4, MOV, WebM, or GIF, trims clips, extracts MP3/WAV/AAC audio, generates JPG/PNG thumbnails, and writes collision-safe outputs beside the source by default.
+
+See the [complete feature guide](docs/FEATURES.md) for expanded workflow details and testing notes.
 
 ## Roadmap at a Glance
 
