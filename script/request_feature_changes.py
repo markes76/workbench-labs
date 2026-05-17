@@ -3,35 +3,26 @@ import argparse
 import json
 import subprocess
 import sys
-from roadmap_lib import issue_title, load_features, repo_name, run, select_features
+from roadmap_lib import (
+    add_issue_comment,
+    add_issue_labels,
+    find_issue_by_title,
+    find_pr_by_branch,
+    issue_title,
+    load_features,
+    remove_issue_label,
+    repo_name,
+    run,
+    select_features,
+)
 
 
 def find_issue(repo, feature):
-    title = issue_title(feature)
-    result = run([
-        "gh", "issue", "list",
-        "--repo", repo,
-        "--state", "open",
-        "--search", f'"{title}" in:title',
-        "--json", "number,title",
-    ])
-    for issue in json.loads(result.stdout):
-        if issue["title"] == title:
-            return issue["number"]
-    return None
+    return find_issue_by_title(repo, issue_title(feature), state="open")
 
 
 def find_integration_pr(repo, feature):
-    result = run([
-        "gh", "pr", "list",
-        "--repo", repo,
-        "--head", feature["branch"],
-        "--base", "main",
-        "--state", "open",
-        "--json", "number,url",
-    ])
-    prs = json.loads(result.stdout)
-    return prs[0] if prs else None
+    return find_pr_by_branch(repo, feature["branch"], state="open")
 
 
 def main():
@@ -57,14 +48,14 @@ Feedback:
 """
 
     if issue_number:
-        run(["gh", "issue", "comment", str(issue_number), "--repo", args.repo, "--body", body])
-        run(["gh", "issue", "edit", str(issue_number), "--repo", args.repo, "--add-label", "needs-changes"])
-        run(["gh", "issue", "edit", str(issue_number), "--repo", args.repo, "--remove-label", "approved-to-merge"], check=False)
+        add_issue_comment(args.repo, issue_number, body)
+        add_issue_labels(args.repo, issue_number, "needs-changes")
+        remove_issue_label(args.repo, issue_number, "approved-to-merge")
 
     if pr:
-        run(["gh", "pr", "comment", str(pr["number"]), "--repo", args.repo, "--body", body])
-        run(["gh", "pr", "edit", str(pr["number"]), "--repo", args.repo, "--add-label", "needs-changes"])
-        run(["gh", "pr", "edit", str(pr["number"]), "--repo", args.repo, "--remove-label", "approved-to-merge"], check=False)
+        add_issue_comment(args.repo, pr["number"], body)
+        add_issue_labels(args.repo, pr["number"], "needs-changes")
+        remove_issue_label(args.repo, pr["number"], "approved-to-merge")
 
     if args.start_agent:
         subprocess.run([
