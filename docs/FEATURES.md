@@ -290,7 +290,7 @@ Key features:
 
 ### PDF Toolkit
 
-Inspects, extracts text, merges, and splits PDF files locally.
+Inspects, extracts text, merges, splits, and edits PDF pages locally.
 
 Key features:
 - Add or drop PDF files.
@@ -298,6 +298,11 @@ Key features:
 - Extract selectable text.
 - Merge multiple PDFs.
 - Split all pages or selected page ranges such as `1-2, 5, 8`.
+- Extract selected pages into one PDF.
+- Delete selected pages while preserving the original file.
+- Reorder pages with an explicit page sequence such as `3,1,2`.
+- Rotate all pages or selected page ranges by 90, 180, or 270 degrees.
+- Append pages from additional PDFs into a new file.
 - Output files default to the source PDF folder unless an output location is provided.
 - Reveal generated files in Finder.
 
@@ -326,4 +331,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include a PDF page editor, PDF OCR, metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include PDF OCR, PDF metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
