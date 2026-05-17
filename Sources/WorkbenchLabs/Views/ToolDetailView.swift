@@ -89,10 +89,10 @@ struct ToolDetailView: View {
           handleDrop(providers)
         }
 
-        if definition.id == .textDiff {
+        if showsSecondaryEditor {
           CodeEditorView(
-            title: "Changed",
-            placeholder: "Changed text",
+            title: secondaryEditorTitle,
+            placeholder: secondaryEditorPlaceholder,
             text: Binding(
               get: { session.wrappedValue.options.secondaryInput },
               set: { value in
@@ -141,6 +141,24 @@ struct ToolDetailView: View {
       }
       .padding()
     }
+  }
+
+  private var showsSecondaryEditor: Bool {
+    definition.id == .textDiff || definition.id == .envInspector
+  }
+
+  private var secondaryEditorTitle: String {
+    if definition.id == .textDiff {
+      return "Changed"
+    }
+    return definition.options.first { $0.key == "secondaryInput" }?.label ?? "Secondary Input"
+  }
+
+  private var secondaryEditorPlaceholder: String {
+    if definition.id == .textDiff {
+      return "Changed text"
+    }
+    return "Paste comparison input..."
   }
 
   private var outputPane: some View {
@@ -201,6 +219,20 @@ struct ToolDetailView: View {
         }
         .disabled(session.wrappedValue.output.isEmpty)
 
+        Button {
+          FileResultActions.copyPaths(generatedFileURLs)
+        } label: {
+          Label(generatedFileURLs.count == 1 ? "Copy Path" : "Copy Paths", systemImage: "link")
+        }
+        .disabled(generatedFileURLs.isEmpty)
+
+        Button {
+          FileResultActions.reveal(generatedFileURLs)
+        } label: {
+          Label(generatedFileURLs.count == 1 ? "Reveal File" : "Reveal Files", systemImage: "finder")
+        }
+        .disabled(generatedFileURLs.isEmpty)
+
         Spacer()
       }
       .padding([.horizontal, .bottom])
@@ -218,8 +250,8 @@ struct ToolDetailView: View {
         Label(diagnostic.message, systemImage: icon(for: diagnostic.severity))
           .foregroundStyle(color(for: diagnostic.severity))
       }
-      if !session.wrappedValue.metadata.isEmpty {
-        Text(session.wrappedValue.metadata.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "  "))
+      if !visibleMetadata.isEmpty {
+        Text(visibleMetadata.map { "\($0.key): \($0.value)" }.sorted().joined(separator: "  "))
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -232,7 +264,20 @@ struct ToolDetailView: View {
   private var diagnosticsVisible: Bool {
     session.wrappedValue.errorMessage != nil ||
     !session.wrappedValue.diagnostics.isEmpty ||
-    !session.wrappedValue.metadata.isEmpty
+    !visibleMetadata.isEmpty
+  }
+
+  private var visibleMetadata: [String: String] {
+    session.wrappedValue.metadata.filter { key, _ in
+      key != FileResultMetadata.generatedFilePathsKey
+    }
+  }
+
+  private var generatedFileURLs: [URL] {
+    FileResultMetadata.existingGeneratedFileURLs(
+      from: session.wrappedValue.metadata,
+      outputFallback: session.wrappedValue.output
+    )
   }
 
   private var imageOutput: NSImage? {
@@ -321,4 +366,5 @@ struct ToolDetailView: View {
       try? store.saveImageOutput(to: url)
     }
   }
+
 }
