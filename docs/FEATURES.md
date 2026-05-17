@@ -306,6 +306,20 @@ Key features:
 - Output files default to the source PDF folder unless an output location is provided.
 - Reveal generated files in Finder.
 
+### PDF OCR Text Extractor
+
+Extracts text from scanned or image-based PDFs locally with Apple Vision or local Tesseract for Hebrew.
+
+Key features:
+- Accepts one PDF file path via paste, file open, or drag/drop.
+- OCR runs locally on rendered PDF pages without uploading documents.
+- Language selector supports English, Hebrew, and English + Hebrew.
+- English OCR uses Apple Vision on macOS.
+- Hebrew and English + Hebrew OCR use local Tesseract with Hebrew language data (`brew install tesseract tesseract-lang`).
+- Page selector supports `all`, individual pages, and ranges such as `1,3-5`.
+- Output is grouped by page and includes confidence summaries where the OCR engine provides confidence.
+- Metadata reports processed page count, recognized text line count, OCR engine, selected recognition languages, and average confidence when available.
+
 ## Image & Video
 
 ### Image Converter
@@ -331,4 +345,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include PDF OCR, PDF metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include PDF metadata scrubbing, batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 31 registered tools across six categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
+Workbench Labs is a SwiftPM macOS 14 SwiftUI app with 32 registered tools across ten categories. The registry lives in `ToolModels` and `ToolRegistry`, execution routes through `ToolRunner`, Swift-native tools live under `Services`, and JS-backed formatters run through the bundled Node runtime.
 
 Primary extension points:
 - Tool IDs/categories: `Sources/WorkbenchLabsCore/Models/ToolModels.swift`
@@ -22,13 +22,13 @@ Primary extension points:
 ## Recently Shipped
 
 - PDF Page Editor: rotate, reorder, delete, extract ranges, and append pages with PDFKit.
+- PDF OCR Text Extractor: OCR scanned PDFs locally with Apple Vision/Tesseract, English/Hebrew language selection, and page-range selection.
 
 ## P1: High-Value Tools
 
 ### PDF & Documents
 
-1. PDF OCR Text Extractor: OCR scanned PDFs with Vision and PDFKit page rendering.
-2. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
+1. PDF Metadata Scrubber: remove title, author, subject, producer, and rebuild pages where needed.
 
 ### Media
 

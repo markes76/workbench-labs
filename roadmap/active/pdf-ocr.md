@@ -1,7 +1,7 @@
 This is the long-lived integration PR for `pdf-ocr`.
 
 ## Summary
-Use Vision and PDFKit page rendering to extract text from scanned PDFs locally.
+Use Vision, Tesseract, and PDFKit page rendering to extract text from scanned PDFs locally.
 
 ## How Work Lands Here
 1. Start Copilot/cloud-agent work with base branch `feature/pdf-ocr`.
@@ -10,6 +10,7 @@ Use Vision and PDFKit page rendering to extract text from scanned PDFs locally.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] OCR runs locally without network calls.
-- [ ] User can choose page ranges.
-- [ ] Output includes recognized text and confidence/diagnostic notes where available.
+- [x] OCR runs locally without network calls.
+- [x] User can choose page ranges.
+- [x] User can choose English, Hebrew, or English + Hebrew OCR.
+- [x] Output includes recognized text and confidence/diagnostic notes where available.

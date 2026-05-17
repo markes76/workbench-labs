@@ -228,6 +228,94 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertEqual(PDFDocument(url: outputURL)?.pageCount, 5)
   }
 
+  func testPDFOCRExtractsTextFromImageBasedPDF() async throws {
+    let pdfURL = try makeImageTextPDF(named: "ocr-image.pdf", text: "WORKBENCH OCR")
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertTrue(result.output.localizedCaseInsensitiveContains("WORKBENCH"), result.output)
+    XCTAssertTrue(result.output.localizedCaseInsensitiveContains("OCR"), result.output)
+    XCTAssertEqual(result.metadata["pages"], "1")
+    XCTAssertNotNil(result.metadata["recognizedTextLines"])
+  }
+
+  func testPDFOCROffersEnglishAndHebrewRecognition() {
+    let definition = ToolRegistry.definition(for: .pdfOCR)
+    let languageOption = definition.options.first { $0.key == "languages" }
+
+    XCTAssertEqual(languageOption?.defaultValue, "en")
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "en" } == true)
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "he" } == true)
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "en-he" } == true)
+    XCTAssertEqual(definition.defaultOptions.textValues["languages"], "en")
+  }
+
+  func testPDFOCRUsesSelectedEnglishVisionLanguage() async throws {
+    let pdfURL = try makeImageTextPDF(named: "ocr-language.pdf", text: "WORKBENCH OCR")
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "en"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertEqual(result.metadata["recognitionEngine"], "vision")
+    XCTAssertEqual(result.metadata["recognitionLanguages"], "en-US")
+  }
+
+  func testPDFOCRExtractsHebrewWithTesseractWhenAvailable() async throws {
+    guard PDFOCRExtractor.hasTesseractLanguages(["heb"]) else {
+      throw XCTSkip("Hebrew OCR requires local Tesseract with heb.traineddata.")
+    }
+
+    let pdfURL = try makeImageTextPDF(named: "ocr-hebrew.pdf", text: "שלום עולם", fontSize: 84)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "he"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertEqual(result.metadata["recognitionEngine"], "tesseract")
+    XCTAssertEqual(result.metadata["recognitionLanguages"], "heb")
+    XCTAssertTrue(result.output.contains("שלום") || result.output.contains("עולם"), result.output)
+  }
+
+  func testPDFOCRReportsMissingHebrewRuntimeWhenTesseractIsUnavailable() async throws {
+    guard !PDFOCRExtractor.hasTesseractLanguages(["heb"]) else {
+      throw XCTSkip("Hebrew OCR runtime is installed on this runner.")
+    }
+
+    let pdfURL = try makeImageTextPDF(named: "ocr-missing-hebrew-runtime.pdf", text: "שלום עולם", fontSize: 84)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "he"
+
+    do {
+      _ = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+      XCTFail("Expected Hebrew OCR to report a missing local runtime.")
+    } catch let error as ToolEngineError {
+      guard case .runtimeUnavailable(let message) = error else {
+        return XCTFail("Expected runtimeUnavailable, got \(error).")
+      }
+      XCTAssertTrue(message.contains("Tesseract"), message)
+      XCTAssertTrue(message.contains("tesseract-lang") || message.contains("heb"), message)
+    }
+  }
+
+  func testPDFOCRValidatesPageRanges() async throws {
+    let pdfURL = try makePDF(named: "ocr-range.pdf", pageCount: 1)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "2"
+
+    do {
+      _ = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+      XCTFail("Expected invalid OCR page range to throw.")
+    } catch let error as ToolEngineError {
+      XCTAssertEqual(error, .invalidInput("Page 2 is outside the valid range 1-1."))
+    }
+  }
+
   func testNewDocumentAndMediaToolsHaveHelpfulEmptyInputOutput() async throws {
     for toolID in [ToolID.pdfToolkit, .imageConverter, .videoConverter] {
       let result = try await runner.run(toolID: toolID, input: "")
@@ -348,6 +436,32 @@ final class PDFAndMediaToolTests: XCTestCase {
       throw CocoaError(.fileWriteUnknown)
     }
     try png.write(to: url)
+    tempURLs.append(url)
+    return url
+  }
+
+  private func makeImageTextPDF(named name: String, text: String, fontSize: CGFloat = 72) throws -> URL {
+    let url = tempURL(named: name)
+    let image = NSImage(size: NSSize(width: 900, height: 300))
+    image.lockFocus()
+    NSColor.white.setFill()
+    NSRect(x: 0, y: 0, width: 900, height: 300).fill()
+    let attributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.boldSystemFont(ofSize: fontSize),
+      .foregroundColor: NSColor.black
+    ]
+    NSAttributedString(string: text, attributes: attributes)
+      .draw(in: NSRect(x: 60, y: 105, width: 780, height: 110))
+    image.unlockFocus()
+
+    let document = PDFDocument()
+    guard let page = PDFPage(image: image) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    document.insert(page, at: 0)
+    guard document.write(to: url) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
     tempURLs.append(url)
     return url
   }
