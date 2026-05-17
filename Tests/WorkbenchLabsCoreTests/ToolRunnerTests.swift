@@ -10,6 +10,30 @@ final class ToolRunnerTests: XCTestCase {
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
   }
 
+  func testRoadmapCategoriesExistInStableSidebarOrder() {
+    XCTAssertEqual(ToolCategory.allCases, [
+      .inspect,
+      .security,
+      .format,
+      .encode,
+      .apiNetwork,
+      .generate,
+      .developer,
+      .document,
+      .database,
+      .media
+    ])
+  }
+
+  func testGroupedRegistryCategorizesEveryToolExactlyOnce() {
+    let groupedIDs = ToolRegistry.grouped().flatMap { $0.1.map(\.id) }
+    let registeredIDs = ToolRegistry.all.map(\.id)
+
+    XCTAssertEqual(groupedIDs.count, registeredIDs.count)
+    XCTAssertEqual(Set(groupedIDs), Set(registeredIDs))
+    XCTAssertEqual(Set(groupedIDs).count, groupedIDs.count)
+  }
+
   func testHTMLPreviewPolicyBlocksExternalRequestsByDefault() {
     let html = "<html><head><title>x</title></head><body><img src=\"https://example.com/pixel.png\"></body></html>"
     let output = HTMLPreviewPolicy.injectContentSecurityPolicy(into: html, allowJavaScript: false)
