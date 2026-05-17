@@ -30,13 +30,13 @@ Workbench Labs is an open-source native macOS developer utility workbench. It is
 - Encode/Decode: URL, Base64, query strings, HTML entities, backslash escaping
 - Generate/Crypto: UUID/ULID-style UUID workflows, Lorem Ipsum, QR code, hash generation
 - PDF & Documents: inspect PDFs, extract selectable text, scrub PDF metadata, OCR scanned PDFs locally in English and Hebrew, merge PDFs, split selected pages, extract page ranges into one PDF, delete pages, reorder pages, rotate pages, and append pages from other PDFs
-- Image & Video: inspect/convert images, batch resize/compress images, inspect/scrub image metadata and GPS location, inspect/transcode video, extract MP3 audio from video
+- Image & Video: inspect/convert images, batch resize/compress images, inspect/scrub image metadata and GPS location, trim/transcode video, extract MP3/WAV/AAC audio, and generate thumbnails
 
 See every tool and workflow in the [complete feature guide](docs/FEATURES.md).
 
 ## Roadmap at a Glance
 
-Planned future builds include richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+Planned future builds include JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
 
 See the full future roadmap in [docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md).
 

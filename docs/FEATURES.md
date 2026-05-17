@@ -367,11 +367,14 @@ Inspects and converts video files locally with `ffmpeg` and `ffprobe` when insta
 
 Key features:
 - Inspect video streams, metadata, duration, and codecs.
-- Convert to MP4, MOV, WebM, GIF, or MP3.
-- MP3 extraction from video files.
+- Convert to MP4, MOV, WebM, or GIF.
+- Trim clips with optional start and end time controls.
+- Extract MP3, WAV, or AAC audio.
+- Generate JPG or PNG thumbnails.
 - Output defaults beside the source video unless a file path is provided.
+- Collision-safe output names avoid overwriting existing files.
 - Uses local binaries and does not upload media.
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

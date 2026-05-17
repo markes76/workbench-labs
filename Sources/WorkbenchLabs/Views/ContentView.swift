@@ -30,6 +30,9 @@ struct ContentView: View {
       } else if store.selectedToolID == .imageMetadataInspector {
         ImageMetadataInspectorView()
           .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")
+      } else if store.selectedToolID == .videoConverter {
+        VideoConverterView()
+          .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")
       } else {
         ToolDetailView(definition: store.selectedDefinition)
           .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")

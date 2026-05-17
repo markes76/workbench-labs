@@ -504,10 +504,14 @@ public enum ToolRegistry {
       sampleInput: "",
       capabilities: [.textInput, .fileInput],
       options: [
-        operationOption([("info", "Info"), ("convert", "Convert")]),
+        operationOption([("info", "Info"), ("convert", "Convert"), ("extractAudio", "Extract Audio"), ("thumbnail", "Thumbnail")]),
         ToolOption(key: "outputFormat", label: "Format", kind: .picker, defaultValue: "mp4", choices: [
-          .init("mp4", "MP4"), .init("mov", "MOV"), .init("webm", "WebM"), .init("gif", "GIF"), .init("mp3", "MP3")
+          .init("mp4", "MP4"), .init("mov", "MOV"), .init("webm", "WebM"), .init("gif", "GIF"),
+          .init("mp3", "MP3"), .init("wav", "WAV"), .init("aac", "AAC"),
+          .init("jpg", "JPG"), .init("png", "PNG")
         ]),
+        ToolOption(key: "startTime", label: "Start", kind: .text, defaultValue: "", help: "Seconds or HH:MM:SS"),
+        ToolOption(key: "endTime", label: "End", kind: .text, defaultValue: "", help: "Seconds or HH:MM:SS"),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: "")
       ]
     )

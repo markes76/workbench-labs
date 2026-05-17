@@ -456,6 +456,20 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(formatOption?.choices.contains { $0.value == "mp3" } == true)
   }
 
+  func testVideoConverterRegistryIncludesClipAudioAndThumbnailControls() {
+    let definition = ToolRegistry.definition(for: .videoConverter)
+    let operationOption = definition.options.first { $0.kind == .operation }
+    let formatOption = definition.options.first { $0.key == "outputFormat" }
+
+    XCTAssertTrue(operationOption?.choices.contains { $0.value == "extractAudio" } == true)
+    XCTAssertTrue(operationOption?.choices.contains { $0.value == "thumbnail" } == true)
+    XCTAssertTrue(formatOption?.choices.contains { $0.value == "wav" } == true)
+    XCTAssertTrue(formatOption?.choices.contains { $0.value == "aac" } == true)
+    XCTAssertTrue(formatOption?.choices.contains { $0.value == "jpg" } == true)
+    XCTAssertTrue(definition.options.contains { $0.key == "startTime" })
+    XCTAssertTrue(definition.options.contains { $0.key == "endTime" })
+  }
+
   func testVideoConverterDefaultOutputUsesSourceFolder() async throws {
     guard let ffmpegURL = localExecutable(named: "ffmpeg") else {
       throw XCTSkip("ffmpeg is optional and is not installed on this runner.")
@@ -477,6 +491,70 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputPath), result.output)
     XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [outputPath])
     tempURLs.append(URL(fileURLWithPath: outputPath))
+  }
+
+  func testVideoConverterTrimsClipBesideSource() async throws {
+    guard let ffmpegURL = localExecutable(named: "ffmpeg") else {
+      throw XCTSkip("ffmpeg is optional and is not installed on this runner.")
+    }
+    guard let ffprobeURL = localExecutable(named: "ffprobe") else {
+      throw XCTSkip("ffprobe is optional and is not installed on this runner.")
+    }
+    let sourceURL = try makeTinyVideo(named: "trim-source.mp4", ffmpegURL: ffmpegURL, duration: 2)
+    var options = ToolRegistry.definition(for: .videoConverter).defaultOptions
+    options.operation = "convert"
+    options.textValues["outputFormat"] = "mp4"
+    options.textValues["startTime"] = "0.25"
+    options.textValues["endTime"] = "1.00"
+
+    let result = try await runner.run(toolID: .videoConverter, input: sourceURL.path, options: options)
+
+    let outputURL = try XCTUnwrap(FileResultMetadata.generatedFileURLs(from: result.metadata).first)
+    tempURLs.append(outputURL)
+    XCTAssertEqual(outputURL.deletingLastPathComponent(), sourceURL.deletingLastPathComponent())
+    XCTAssertTrue(outputURL.lastPathComponent.contains("-clip"), outputURL.path)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path), result.output)
+    let sourceDuration = try mediaDuration(sourceURL, ffprobeURL: ffprobeURL)
+    let clipDuration = try mediaDuration(outputURL, ffprobeURL: ffprobeURL)
+    XCTAssertLessThan(clipDuration, sourceDuration)
+    XCTAssertLessThan(clipDuration, 1.5)
+  }
+
+  func testVideoConverterExtractsWAVAudioBesideSource() async throws {
+    guard let ffmpegURL = localExecutable(named: "ffmpeg") else {
+      throw XCTSkip("ffmpeg is optional and is not installed on this runner.")
+    }
+    let sourceURL = try makeTinyVideo(named: "audio-source.mp4", ffmpegURL: ffmpegURL)
+    var options = ToolRegistry.definition(for: .videoConverter).defaultOptions
+    options.operation = "extractAudio"
+    options.textValues["outputFormat"] = "wav"
+
+    let result = try await runner.run(toolID: .videoConverter, input: sourceURL.path, options: options)
+
+    let outputURL = try XCTUnwrap(FileResultMetadata.generatedFileURLs(from: result.metadata).first)
+    tempURLs.append(outputURL)
+    XCTAssertEqual(outputURL.deletingLastPathComponent(), sourceURL.deletingLastPathComponent())
+    XCTAssertTrue(outputURL.lastPathComponent.hasSuffix("-audio.wav"), outputURL.path)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path), result.output)
+  }
+
+  func testVideoConverterGeneratesThumbnailBesideSource() async throws {
+    guard let ffmpegURL = localExecutable(named: "ffmpeg") else {
+      throw XCTSkip("ffmpeg is optional and is not installed on this runner.")
+    }
+    let sourceURL = try makeTinyVideo(named: "thumbnail-source.mp4", ffmpegURL: ffmpegURL)
+    var options = ToolRegistry.definition(for: .videoConverter).defaultOptions
+    options.operation = "thumbnail"
+    options.textValues["outputFormat"] = "jpg"
+    options.textValues["startTime"] = "0"
+
+    let result = try await runner.run(toolID: .videoConverter, input: sourceURL.path, options: options)
+
+    let outputURL = try XCTUnwrap(FileResultMetadata.generatedFileURLs(from: result.metadata).first)
+    tempURLs.append(outputURL)
+    XCTAssertEqual(outputURL.deletingLastPathComponent(), sourceURL.deletingLastPathComponent())
+    XCTAssertTrue(outputURL.lastPathComponent.hasSuffix("-thumbnail.jpg"), outputURL.path)
+    XCTAssertEqual(imagePixelSize(outputURL), CGSize(width: 32, height: 32))
   }
 
   func testFileResultMetadataRoundTripsGeneratedFilePaths() {
@@ -692,7 +770,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     return url
   }
 
-  private func makeTinyVideo(named name: String, ffmpegURL: URL) throws -> URL {
+  private func makeTinyVideo(named name: String, ffmpegURL: URL, duration: Double = 1) throws -> URL {
     let url = tempURL(named: name)
     let process = Process()
     process.executableURL = ffmpegURL
@@ -702,8 +780,8 @@ final class PDFAndMediaToolTests: XCTestCase {
       "-f", "lavfi",
       "-i", "testsrc=size=32x32:rate=1",
       "-f", "lavfi",
-      "-i", "sine=frequency=440:duration=1",
-      "-t", "1",
+      "-i", "sine=frequency=440:duration=\(duration)",
+      "-t", "\(duration)",
       "-pix_fmt", "yuv420p",
       "-c:v", "libx264",
       "-c:a", "aac",
@@ -714,6 +792,25 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertEqual(process.terminationStatus, 0)
     tempURLs.append(url)
     return url
+  }
+
+  private func mediaDuration(_ url: URL, ffprobeURL: URL) throws -> Double {
+    let process = Process()
+    process.executableURL = ffprobeURL
+    process.arguments = [
+      "-v", "error",
+      "-show_entries", "format=duration",
+      "-of", "default=noprint_wrappers=1:nokey=1",
+      url.path
+    ]
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    try process.run()
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationStatus, 0)
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+    return Double(output) ?? 0
   }
 
   private func localExecutable(named name: String) -> URL? {
