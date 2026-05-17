@@ -68,7 +68,10 @@ public enum VideoConverter {
 
     _ = try runRequiredProcess(executableURL: ffmpeg, arguments: arguments, timeout: 600)
     try FileManager.default.moveItem(at: temporaryURL, to: outputURL)
-    return ToolResult(output: "Converted video to \(format.uppercased()):\n\(outputURL.path)")
+    return ToolResult(
+      output: "Converted video to \(format.uppercased()):\n\(outputURL.path)",
+      metadata: FileResultMetadata.metadata(generatedFileURLs: [outputURL])
+    )
   }
 
   private static func runRequiredProcess(executableURL: URL, arguments: [String], timeout: TimeInterval) throws -> String {

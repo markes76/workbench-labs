@@ -219,7 +219,14 @@ struct PDFToolkitView: View {
         .disabled(output.isEmpty)
 
         Button {
-          revealOutputs()
+          FileResultActions.copyPaths(outputURLs)
+        } label: {
+          Label("Copy Paths", systemImage: "link")
+        }
+        .disabled(outputURLs.isEmpty)
+
+        Button {
+          FileResultActions.reveal(outputURLs)
         } label: {
           Label("Reveal Files", systemImage: "finder")
         }
@@ -266,7 +273,7 @@ struct PDFToolkitView: View {
     }
     output = session.output
     errorMessage = session.errorMessage
-    outputURLs = existingFileURLs(in: session.output)
+    outputURLs = FileResultMetadata.existingGeneratedFileURLs(from: session.metadata, outputFallback: session.output)
   }
 
   private func choosePDFs() {
@@ -340,7 +347,7 @@ struct PDFToolkitView: View {
     isRunning = false
     output = result.output
     errorMessage = nil
-    outputURLs = existingFileURLs(in: result.output)
+    outputURLs = FileResultMetadata.existingGeneratedFileURLs(from: result.metadata, outputFallback: result.output)
     var session = ToolSessionState(definition: ToolRegistry.definition(for: .pdfToolkit))
     session.input = input
     session.options = options
@@ -362,21 +369,9 @@ struct PDFToolkitView: View {
     store.sessions[.pdfToolkit] = session
   }
 
-  private func existingFileURLs(in text: String) -> [URL] {
-    text
-      .split(whereSeparator: \.isNewline)
-      .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-      .map { URL(fileURLWithPath: $0) }
-      .filter { FileManager.default.fileExists(atPath: $0.path) }
-  }
-
   private func copyOutput() {
     guard !output.isEmpty else { return }
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(output, forType: .string)
-  }
-
-  private func revealOutputs() {
-    NSWorkspace.shared.activateFileViewerSelecting(outputURLs)
   }
 }
