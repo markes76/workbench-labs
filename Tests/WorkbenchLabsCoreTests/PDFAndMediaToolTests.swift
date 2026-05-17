@@ -152,7 +152,12 @@ final class PDFAndMediaToolTests: XCTestCase {
   }
 
   func testVideoConverterDefaultOutputUsesSourceFolder() async throws {
-    let ffmpegURL = try XCTUnwrap(localExecutable(named: "ffmpeg"))
+    guard let ffmpegURL = localExecutable(named: "ffmpeg") else {
+      throw XCTSkip("ffmpeg is optional and is not installed on this runner.")
+    }
+    guard localExecutable(named: "ffprobe") != nil else {
+      throw XCTSkip("ffprobe is optional and is not installed on this runner.")
+    }
     let sourceURL = try makeTinyVideo(named: "source-video.mp4", ffmpegURL: ffmpegURL)
     var options = ToolRegistry.definition(for: .videoConverter).defaultOptions
     options.operation = "convert"
