@@ -26,12 +26,9 @@ Primary extension points:
 - PDF Metadata Scrubber: inspect metadata and write rebuilt PDFs with selected metadata fields blanked.
 - Batch Image Resizer/Compressor: resize, compress, strip metadata, and batch-convert images locally.
 - Image Metadata Inspector: inspect EXIF/GPS/color metadata and write GPS-scrubbed safe-sharing copies.
+- Video Clip & Audio Extract: trim video by start/end, extract MP3/WAV/AAC, and generate thumbnails.
 
 ## P1: High-Value Tools
-
-### Media
-
-1. Video Clip & Audio Extract: trim by start/end, extract MP3/WAV/AAC, generate thumbnails.
 
 ### Developer Utilities
 
