@@ -5,9 +5,10 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 34)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 34)
+    XCTAssertEqual(ToolRegistry.all.count, 35)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 35)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == "JSON Schema Validator" })
   }
 
   func testRoadmapCategoriesExistInStableSidebarOrder() {
@@ -83,6 +84,49 @@ final class ToolRunnerTests: XCTestCase {
     let result = try await runner.run(toolID: .jsonFormatter, input: #"{"b":2,"a":1}"#, options: options)
     XCTAssertTrue(result.output.contains(#""a": 1"#))
     XCTAssertTrue(result.output.contains(#""b": 2"#))
+  }
+
+  func testJSONSchemaRuntimeReportsValidDocuments() throws {
+    var options = ToolOptions()
+    options.secondaryInput = #"{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}"#
+
+    let result = try JavaScriptToolRunner().run(
+      tool: "json-schema",
+      input: #"{"name":"Workbench Labs"}"#,
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Valid JSON"))
+    XCTAssertEqual(result.metadata["valid"], "true")
+    XCTAssertEqual(result.metadata["errorCount"], "0")
+  }
+
+  func testJSONSchemaRuntimeReportsValidationErrorsWithPaths() throws {
+    var options = ToolOptions()
+    options.secondaryInput = #"{"type":"object","required":["name"],"properties":{"name":{"type":"string"},"count":{"type":"integer","minimum":1}}}"#
+
+    let result = try JavaScriptToolRunner().run(
+      tool: "json-schema",
+      input: #"{"count":0}"#,
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Invalid JSON"))
+    XCTAssertTrue(result.output.contains("/count"))
+    XCTAssertTrue(result.output.contains("must be >= 1"))
+    XCTAssertTrue(result.output.contains("must have required property 'name'"))
+    XCTAssertEqual(result.metadata["valid"], "false")
+    XCTAssertEqual(result.metadata["errorCount"], "2")
+  }
+
+  func testJSONSchemaValidatorRunsThroughToolRunner() async throws {
+    var options = ToolRegistry.definition(for: .jsonSchemaValidator).defaultOptions
+    options.secondaryInput = #"{"type":"object","required":["enabled"],"properties":{"enabled":{"type":"boolean"}}}"#
+
+    let result = try await runner.run(toolID: .jsonSchemaValidator, input: #"{"enabled":true}"#, options: options)
+
+    XCTAssertTrue(result.output.contains("Valid JSON"))
+    XCTAssertEqual(result.metadata["valid"], "true")
   }
 
   func testYAMLToJSONUsesBundledRuntime() async throws {

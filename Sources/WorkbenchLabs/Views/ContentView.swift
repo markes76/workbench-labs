@@ -15,6 +15,9 @@ struct ContentView: View {
       } else if store.selectedToolID == .jsonFormatter {
         JSONFormatValidateView()
           .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")
+      } else if store.selectedToolID == .jsonSchemaValidator {
+        JSONSchemaValidatorView()
+          .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")
       } else if store.selectedToolID == .base64Codec {
         Base64StringEncodeDecodeView()
           .id("\(store.selectedToolID.rawValue)-\(store.detailRefreshID)")
