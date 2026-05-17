@@ -1,5 +1,7 @@
 import AppKit
+import ImageIO
 import PDFKit
+import UniformTypeIdentifiers
 import XCTest
 @testable import WorkbenchLabsCore
 
@@ -21,6 +23,20 @@ final class PDFAndMediaToolTests: XCTestCase {
 
     XCTAssertTrue(result.output.contains("Pages: 1"), result.output)
     XCTAssertTrue(result.output.contains(pdfURL.path), result.output)
+  }
+
+  func testPDFToolkitInspectShowsMetadataFields() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata.pdf", pageCount: 2)
+
+    let result = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path)
+
+    XCTAssertTrue(result.output.contains("Title: Internal Roadmap"), result.output)
+    XCTAssertTrue(result.output.contains("Author: Workbench Labs"), result.output)
+    XCTAssertTrue(result.output.contains("Subject: Metadata Scrubber Test"), result.output)
+    XCTAssertTrue(result.output.contains("Creator: Workbench Test Suite"), result.output)
+    XCTAssertTrue(result.output.contains("Producer: "), result.output)
+    XCTAssertFalse(result.output.contains("Producer: -"), result.output)
+    XCTAssertTrue(result.output.contains("Keywords: private, draft"), result.output)
   }
 
   func testPDFToolkitExtractsTextFromLocalPDF() async throws {
@@ -50,6 +66,81 @@ final class PDFAndMediaToolTests: XCTestCase {
 
     XCTAssertTrue(converted.output.contains(outputURL.path), converted.output)
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path))
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: converted.metadata), [outputURL])
+  }
+
+  func testBatchImageResizerProcessesMultipleImagesBesideSource() async throws {
+    let firstURL = try makePNG(named: "batch-a.png", size: CGSize(width: 12, height: 8))
+    let secondURL = try makePNG(named: "batch-b.png", size: CGSize(width: 20, height: 10))
+    var options = ToolRegistry.definition(for: .batchImageResizer).defaultOptions
+    options.textValues["resizeMode"] = "max"
+    options.intValues["maxDimension"] = 6
+    options.textValues["outputFormat"] = "png"
+
+    let result = try await runner.run(toolID: .batchImageResizer, input: "\(firstURL.path)\n\(secondURL.path)", options: options)
+
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 2, result.output)
+    XCTAssertEqual(outputURLs[0].deletingLastPathComponent(), firstURL.deletingLastPathComponent())
+    XCTAssertEqual(imagePixelSize(outputURLs[0]), CGSize(width: 6, height: 4))
+    XCTAssertEqual(imagePixelSize(outputURLs[1]), CGSize(width: 6, height: 3))
+  }
+
+  func testBatchImageResizerScaleModeUsesOutputFolderAndAvoidsOverwrites() async throws {
+    let inputURL = try makePNG(named: "batch-overwrite.png", size: CGSize(width: 10, height: 6))
+    let outputDirectoryURL = try tempDirectory(named: "batch-output")
+    let existingURL = outputDirectoryURL.appendingPathComponent("batch-overwrite-resized.jpg")
+    try Data("existing".utf8).write(to: existingURL)
+
+    var options = ToolRegistry.definition(for: .batchImageResizer).defaultOptions
+    options.textValues["resizeMode"] = "scale"
+    options.intValues["scalePercent"] = 50
+    options.textValues["outputFormat"] = "jpeg"
+    options.textValues["outputDirectory"] = outputDirectoryURL.path
+    options.boolValues["stripMetadata"] = true
+
+    let result = try await runner.run(toolID: .batchImageResizer, input: inputURL.path, options: options)
+
+    XCTAssertEqual(try Data(contentsOf: existingURL), Data("existing".utf8))
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 1, result.output)
+    XCTAssertNotEqual(outputURLs[0], existingURL)
+    XCTAssertTrue(outputURLs[0].path.hasPrefix(outputDirectoryURL.path), result.output)
+    XCTAssertEqual(imagePixelSize(outputURLs[0]), CGSize(width: 5, height: 3))
+  }
+
+  func testImageMetadataInspectorReportsGPSCoordinatesAndPrivacyRisk() async throws {
+    let inputURL = try makeJPEGWithGPS(named: "gps-source.jpg")
+
+    let result = try await runner.run(toolID: .imageMetadataInspector, input: inputURL.path)
+
+    XCTAssertTrue(result.output.contains("GPS: present"), result.output)
+    XCTAssertTrue(result.output.contains("Latitude: 32.0853"), result.output)
+    XCTAssertTrue(result.output.contains("Longitude: 34.7818"), result.output)
+    XCTAssertTrue(result.output.contains("Privacy: geolocation metadata found"), result.output)
+    XCTAssertEqual(result.metadata["gps"], "present")
+  }
+
+  func testImageMetadataInspectorScrubsGeolocationBesideSourceWithoutChangingOriginal() async throws {
+    let inputURL = try makeJPEGWithGPS(named: "gps-private.jpg")
+    XCTAssertNotNil(imageMetadataDictionary(inputURL, key: kCGImagePropertyGPSDictionary))
+
+    var options = ToolRegistry.definition(for: .imageMetadataInspector).defaultOptions
+    options.operation = "scrub"
+    options.boolValues["removeGPS"] = true
+    options.boolValues["removeCameraMetadata"] = false
+    options.boolValues["removeDescriptiveMetadata"] = false
+
+    let result = try await runner.run(toolID: .imageMetadataInspector, input: inputURL.path, options: options)
+
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 1, result.output)
+    XCTAssertEqual(outputURLs[0].deletingLastPathComponent(), inputURL.deletingLastPathComponent())
+    XCTAssertNotEqual(outputURLs[0], inputURL)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: outputURLs[0].path))
+    XCTAssertNotNil(imageMetadataDictionary(inputURL, key: kCGImagePropertyGPSDictionary), "Original image should be untouched.")
+    XCTAssertNil(imageMetadataDictionary(outputURLs[0], key: kCGImagePropertyGPSDictionary), result.output)
+    XCTAssertTrue(result.output.contains("Removed: GPS location"), result.output)
   }
 
   func testPDFToolkitSplitsSelectedPagesIntoRealOnePagePDFs() async throws {
@@ -69,6 +160,7 @@ final class PDFAndMediaToolTests: XCTestCase {
       outputDirectoryURL.appendingPathComponent("\(sourceName)-page-5.pdf")
     ]
     XCTAssertTrue(result.output.contains("Wrote 3 PDF page files"), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata), expectedURLs)
     for url in expectedURLs {
       XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "Missing split file: \(url.path)")
       XCTAssertEqual(PDFDocument(url: url)?.pageCount, 1, "Split file should contain exactly one page: \(url.path)")
@@ -94,6 +186,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
     XCTAssertEqual(PDFDocument(url: URL(fileURLWithPath: createdPath))?.pageCount, 1)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
   }
 
   func testImageConverterCreatesCollisionSafeOutputWithoutOverwritingExistingFile() async throws {
@@ -114,6 +207,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertFalse(result.output.contains(outputURL.path), result.output)
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
   }
 
   func testPDFMergeCreatesCollisionSafeOutputWithoutOverwritingExistingFile() async throws {
@@ -135,10 +229,221 @@ final class PDFAndMediaToolTests: XCTestCase {
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
     XCTAssertEqual(PDFDocument(url: URL(fileURLWithPath: createdPath))?.pageCount, 2)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
+  }
+
+  func testPDFToolkitExtractsSelectedPagesIntoOnePDF() async throws {
+    let pdfURL = try makeSizedPDF(named: "extract-pages.pdf", pageSizes: [
+      CGSize(width: 200, height: 120),
+      CGSize(width: 220, height: 120),
+      CGSize(width: 240, height: 120),
+      CGSize(width: 260, height: 120)
+    ])
+    let outputURL = tempURL(named: "extracted-pages.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "extractPages"
+    options.textValues["pages"] = "2,4"
+    options.textValues["outputPath"] = outputURL.path
+
+    let result = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertTrue(result.output.contains(outputURL.path), result.output)
+    XCTAssertEqual(outputDocument.pageCount, 2)
+    XCTAssertEqual(outputDocument.page(at: 0)?.bounds(for: .mediaBox).width, 220)
+    XCTAssertEqual(outputDocument.page(at: 1)?.bounds(for: .mediaBox).width, 260)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata), [outputURL])
+  }
+
+  func testPDFToolkitDeletesSelectedPages() async throws {
+    let pdfURL = try makePDF(named: "delete-pages.pdf", pageCount: 4)
+    let outputURL = tempURL(named: "deleted-pages.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "deletePages"
+    options.textValues["pages"] = "2,3"
+    options.textValues["outputPath"] = outputURL.path
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    XCTAssertEqual(PDFDocument(url: outputURL)?.pageCount, 2)
+  }
+
+  func testPDFToolkitReordersPages() async throws {
+    let pdfURL = try makeSizedPDF(named: "reorder-pages.pdf", pageSizes: [
+      CGSize(width: 200, height: 120),
+      CGSize(width: 220, height: 120),
+      CGSize(width: 240, height: 120)
+    ])
+    let outputURL = tempURL(named: "reordered-pages.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "reorderPages"
+    options.textValues["pages"] = "3,1"
+    options.textValues["outputPath"] = outputURL.path
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertEqual(outputDocument.pageCount, 2)
+    XCTAssertEqual(outputDocument.page(at: 0)?.bounds(for: .mediaBox).width, 240)
+    XCTAssertEqual(outputDocument.page(at: 1)?.bounds(for: .mediaBox).width, 200)
+  }
+
+  func testPDFToolkitRotatesSelectedPages() async throws {
+    let pdfURL = try makePDF(named: "rotate-pages.pdf", pageCount: 3)
+    let outputURL = tempURL(named: "rotated-pages.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "rotatePages"
+    options.textValues["pages"] = "1,3"
+    options.textValues["rotation"] = "90"
+    options.textValues["outputPath"] = outputURL.path
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertEqual(outputDocument.page(at: 0)?.rotation, 90)
+    XCTAssertEqual(outputDocument.page(at: 1)?.rotation, 0)
+    XCTAssertEqual(outputDocument.page(at: 2)?.rotation, 90)
+  }
+
+  func testPDFToolkitAppendsPagesFromAdditionalPDFs() async throws {
+    let firstURL = try makePDF(named: "append-a.pdf", pageCount: 2)
+    let secondURL = try makePDF(named: "append-b.pdf", pageCount: 3)
+    let outputURL = tempURL(named: "appended-pages.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "appendPages"
+    options.textValues["outputPath"] = outputURL.path
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: "\(firstURL.path)\n\(secondURL.path)", options: options)
+
+    XCTAssertEqual(PDFDocument(url: outputURL)?.pageCount, 5)
+  }
+
+  func testPDFToolkitScrubsMetadataAndPreservesPages() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata-source.pdf", pageCount: 3)
+    let outputURL = tempURL(named: "metadata-scrubbed.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "scrubMetadata"
+    options.textValues["outputPath"] = outputURL.path
+
+    let result = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertEqual(outputDocument.pageCount, 3)
+    XCTAssertMetadataScrubbed(outputDocument)
+    XCTAssertTrue(result.output.contains(outputURL.path), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata), [outputURL])
+
+    let sourceDocument = try XCTUnwrap(PDFDocument(url: pdfURL))
+    XCTAssertEqual(metadataString(sourceDocument, .titleAttribute), "Internal Roadmap")
+  }
+
+  func testPDFToolkitScrubsOnlySelectedMetadataFields() async throws {
+    let pdfURL = try makeMetadataPDF(named: "metadata-selective.pdf", pageCount: 1)
+    let outputURL = tempURL(named: "metadata-selective-scrubbed.pdf")
+    var options = ToolRegistry.definition(for: .pdfToolkit).defaultOptions
+    options.operation = "scrubMetadata"
+    options.textValues["outputPath"] = outputURL.path
+    options.boolValues["scrubAuthor"] = false
+    options.boolValues["scrubSubject"] = false
+
+    _ = try await runner.run(toolID: .pdfToolkit, input: pdfURL.path, options: options)
+
+    let outputDocument = try XCTUnwrap(PDFDocument(url: outputURL))
+    XCTAssertTrue(metadataString(outputDocument, .titleAttribute).isEmpty)
+    XCTAssertEqual(metadataString(outputDocument, .authorAttribute), "Workbench Labs")
+    XCTAssertEqual(metadataString(outputDocument, .subjectAttribute), "Metadata Scrubber Test")
+  }
+
+  func testPDFOCRExtractsTextFromImageBasedPDF() async throws {
+    let pdfURL = try makeImageTextPDF(named: "ocr-image.pdf", text: "WORKBENCH OCR")
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertTrue(result.output.localizedCaseInsensitiveContains("WORKBENCH"), result.output)
+    XCTAssertTrue(result.output.localizedCaseInsensitiveContains("OCR"), result.output)
+    XCTAssertEqual(result.metadata["pages"], "1")
+    XCTAssertNotNil(result.metadata["recognizedTextLines"])
+  }
+
+  func testPDFOCROffersEnglishAndHebrewRecognition() {
+    let definition = ToolRegistry.definition(for: .pdfOCR)
+    let languageOption = definition.options.first { $0.key == "languages" }
+
+    XCTAssertEqual(languageOption?.defaultValue, "en")
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "en" } == true)
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "he" } == true)
+    XCTAssertTrue(languageOption?.choices.contains { $0.value == "en-he" } == true)
+    XCTAssertEqual(definition.defaultOptions.textValues["languages"], "en")
+  }
+
+  func testPDFOCRUsesSelectedEnglishVisionLanguage() async throws {
+    let pdfURL = try makeImageTextPDF(named: "ocr-language.pdf", text: "WORKBENCH OCR")
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "en"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertEqual(result.metadata["recognitionEngine"], "vision")
+    XCTAssertEqual(result.metadata["recognitionLanguages"], "en-US")
+  }
+
+  func testPDFOCRExtractsHebrewWithTesseractWhenAvailable() async throws {
+    guard PDFOCRExtractor.hasTesseractLanguages(["heb"]) else {
+      throw XCTSkip("Hebrew OCR requires local Tesseract with heb.traineddata.")
+    }
+
+    let pdfURL = try makeImageTextPDF(named: "ocr-hebrew.pdf", text: "שלום עולם", fontSize: 84)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "he"
+
+    let result = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+
+    XCTAssertEqual(result.metadata["recognitionEngine"], "tesseract")
+    XCTAssertEqual(result.metadata["recognitionLanguages"], "heb")
+    XCTAssertTrue(result.output.contains("שלום") || result.output.contains("עולם"), result.output)
+  }
+
+  func testPDFOCRReportsMissingHebrewRuntimeWhenTesseractIsUnavailable() async throws {
+    guard !PDFOCRExtractor.hasTesseractLanguages(["heb"]) else {
+      throw XCTSkip("Hebrew OCR runtime is installed on this runner.")
+    }
+
+    let pdfURL = try makeImageTextPDF(named: "ocr-missing-hebrew-runtime.pdf", text: "שלום עולם", fontSize: 84)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "1"
+    options.textValues["languages"] = "he"
+
+    do {
+      _ = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+      XCTFail("Expected Hebrew OCR to report a missing local runtime.")
+    } catch let error as ToolEngineError {
+      guard case .runtimeUnavailable(let message) = error else {
+        return XCTFail("Expected runtimeUnavailable, got \(error).")
+      }
+      XCTAssertTrue(message.contains("Tesseract"), message)
+      XCTAssertTrue(message.contains("tesseract-lang") || message.contains("heb"), message)
+    }
+  }
+
+  func testPDFOCRValidatesPageRanges() async throws {
+    let pdfURL = try makePDF(named: "ocr-range.pdf", pageCount: 1)
+    var options = ToolRegistry.definition(for: .pdfOCR).defaultOptions
+    options.textValues["pages"] = "2"
+
+    do {
+      _ = try await runner.run(toolID: .pdfOCR, input: pdfURL.path, options: options)
+      XCTFail("Expected invalid OCR page range to throw.")
+    } catch let error as ToolEngineError {
+      XCTAssertEqual(error, .invalidInput("Page 2 is outside the valid range 1-1."))
+    }
   }
 
   func testNewDocumentAndMediaToolsHaveHelpfulEmptyInputOutput() async throws {
-    for toolID in [ToolID.pdfToolkit, .imageConverter, .videoConverter] {
+    for toolID in [ToolID.pdfToolkit, .imageConverter, .batchImageResizer, .videoConverter] {
       let result = try await runner.run(toolID: toolID, input: "")
       XCTAssertFalse(result.output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(toolID.rawValue) help output was empty")
     }
@@ -170,27 +475,68 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(outputPath.hasPrefix(sourceURL.deletingLastPathComponent().path), result.output)
     XCTAssertTrue(outputPath.hasSuffix(".mp3"), result.output)
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputPath), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [outputPath])
     tempURLs.append(URL(fileURLWithPath: outputPath))
   }
 
+  func testFileResultMetadataRoundTripsGeneratedFilePaths() {
+    let urls = [
+      URL(fileURLWithPath: "/tmp/Workbench Labs/output one.pdf"),
+      URL(fileURLWithPath: "/tmp/Workbench Labs/output two.pdf")
+    ]
+
+    let metadata = FileResultMetadata.metadata(generatedFileURLs: urls)
+
+    XCTAssertEqual(metadata[FileResultMetadata.generatedFileCountKey], "2")
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: metadata), urls)
+  }
+
   private func makePDF(named name: String, text: String = "Workbench Labs", pageCount: Int = 1) throws -> URL {
+    try makePDF(named: name, text: text, pageSizes: Array(repeating: CGSize(width: 240, height: 120), count: pageCount))
+  }
+
+  private func makeSizedPDF(named name: String, pageSizes: [CGSize]) throws -> URL {
+    let url = tempURL(named: name)
+    let document = PDFDocument()
+    for (index, size) in pageSizes.enumerated() {
+      let image = NSImage(size: NSSize(width: size.width, height: size.height))
+      image.lockFocus()
+      NSColor(calibratedHue: CGFloat(index) / CGFloat(max(pageSizes.count, 1)), saturation: 0.7, brightness: 0.9, alpha: 1).setFill()
+      NSRect(origin: .zero, size: image.size).fill()
+      image.unlockFocus()
+      guard let page = PDFPage(image: image) else {
+        throw CocoaError(.fileWriteUnknown)
+      }
+      document.insert(page, at: document.pageCount)
+    }
+    guard document.write(to: url) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    tempURLs.append(url)
+    return url
+  }
+
+  private func makePDF(named name: String, text: String = "Workbench Labs", pageSizes: [CGSize]) throws -> URL {
     let url = tempURL(named: name)
     let pdfData = NSMutableData()
     guard let consumer = CGDataConsumer(data: pdfData as CFMutableData) else {
       throw CocoaError(.fileWriteUnknown)
     }
-    var mediaBox = CGRect(x: 0, y: 0, width: 240, height: 120)
+    var mediaBox = CGRect(origin: .zero, size: pageSizes.first ?? CGSize(width: 240, height: 120))
     guard let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
       throw CocoaError(.fileWriteUnknown)
     }
 
-    for page in 1...pageCount {
-      context.beginPDFPage(nil)
+    for (index, size) in pageSizes.enumerated() {
+      mediaBox = CGRect(origin: .zero, size: size)
+      context.beginPDFPage([
+        kCGPDFContextMediaBox as String: mediaBox
+      ] as CFDictionary)
       let attributes: [NSAttributedString.Key: Any] = [
         .font: NSFont.systemFont(ofSize: 18),
         .foregroundColor: NSColor.black
       ]
-      NSAttributedString(string: "\(text) \(page)", attributes: attributes)
+      NSAttributedString(string: "\(text) \(index + 1)", attributes: attributes)
         .draw(in: CGRect(x: 20, y: 45, width: 200, height: 40))
       context.endPDFPage()
     }
@@ -201,12 +547,56 @@ final class PDFAndMediaToolTests: XCTestCase {
     return url
   }
 
-  private func makePNG(named name: String) throws -> URL {
+  private func makeMetadataPDF(named name: String, pageCount: Int) throws -> URL {
+    let url = try makePDF(named: name, pageCount: pageCount)
+    guard let document = PDFDocument(url: url) else {
+      throw CocoaError(.fileReadUnknown)
+    }
+    document.documentAttributes = [
+      PDFDocumentAttribute.titleAttribute: "Internal Roadmap",
+      PDFDocumentAttribute.authorAttribute: "Workbench Labs",
+      PDFDocumentAttribute.subjectAttribute: "Metadata Scrubber Test",
+      PDFDocumentAttribute.creatorAttribute: "Workbench Test Suite",
+      PDFDocumentAttribute.producerAttribute: "Workbench PDF Fixture",
+      PDFDocumentAttribute.keywordsAttribute: "private, draft"
+    ]
+    guard document.write(to: url) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    return url
+  }
+
+  private func XCTAssertMetadataScrubbed(_ document: PDFDocument, file: StaticString = #filePath, line: UInt = #line) {
+    let scrubbedAttributes: [PDFDocumentAttribute] = [
+      .titleAttribute,
+      .authorAttribute,
+      .subjectAttribute,
+      .creatorAttribute,
+      .producerAttribute,
+      .keywordsAttribute
+    ]
+    for attribute in scrubbedAttributes {
+      XCTAssertTrue(metadataString(document, attribute).isEmpty, "Expected \(attribute) to be scrubbed.", file: file, line: line)
+    }
+  }
+
+  private func metadataString(_ document: PDFDocument, _ attribute: PDFDocumentAttribute) -> String {
+    guard let value = document.documentAttributes?[attribute] else { return "" }
+    if let string = value as? String {
+      return string.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    if let strings = value as? [String] {
+      return strings.joined(separator: ", ").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    return String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private func makePNG(named name: String, size: CGSize = CGSize(width: 8, height: 6)) throws -> URL {
     let url = tempURL(named: name)
-    let image = NSImage(size: NSSize(width: 8, height: 6))
+    let image = NSImage(size: NSSize(width: size.width, height: size.height))
     image.lockFocus()
     NSColor.systemBlue.setFill()
-    NSRect(x: 0, y: 0, width: 8, height: 6).fill()
+    NSRect(x: 0, y: 0, width: size.width, height: size.height).fill()
     image.unlockFocus()
     guard
       let tiff = image.tiffRepresentation,
@@ -216,6 +606,88 @@ final class PDFAndMediaToolTests: XCTestCase {
       throw CocoaError(.fileWriteUnknown)
     }
     try png.write(to: url)
+    tempURLs.append(url)
+    return url
+  }
+
+  private func makeJPEGWithGPS(named name: String) throws -> URL {
+    let url = tempURL(named: name)
+    let image = NSImage(size: NSSize(width: 12, height: 8))
+    image.lockFocus()
+    NSColor.systemGreen.setFill()
+    NSRect(x: 0, y: 0, width: 12, height: 8).fill()
+    image.unlockFocus()
+    guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+          let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.jpeg.identifier as CFString, 1, nil)
+    else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+
+    let metadata: [CFString: Any] = [
+      kCGImagePropertyGPSDictionary: [
+        kCGImagePropertyGPSLatitude: 32.0853,
+        kCGImagePropertyGPSLatitudeRef: "N",
+        kCGImagePropertyGPSLongitude: 34.7818,
+        kCGImagePropertyGPSLongitudeRef: "E",
+        kCGImagePropertyGPSDateStamp: "2026:05:17"
+      ],
+      kCGImagePropertyExifDictionary: [
+        kCGImagePropertyExifLensModel: "Private Lens"
+      ],
+      kCGImagePropertyTIFFDictionary: [
+        kCGImagePropertyTIFFMake: "Workbench Camera"
+      ]
+    ]
+    CGImageDestinationAddImage(destination, cgImage, metadata as CFDictionary)
+    guard CGImageDestinationFinalize(destination) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    tempURLs.append(url)
+    return url
+  }
+
+  private func imageMetadataDictionary(_ url: URL, key: CFString) -> [CFString: Any]? {
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+    else {
+      return nil
+    }
+    return properties[key] as? [CFString: Any]
+  }
+
+  private func imagePixelSize(_ url: URL) -> CGSize? {
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+          let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+          let height = properties[kCGImagePropertyPixelHeight] as? CGFloat
+    else {
+      return nil
+    }
+    return CGSize(width: width, height: height)
+  }
+
+  private func makeImageTextPDF(named name: String, text: String, fontSize: CGFloat = 72) throws -> URL {
+    let url = tempURL(named: name)
+    let image = NSImage(size: NSSize(width: 900, height: 300))
+    image.lockFocus()
+    NSColor.white.setFill()
+    NSRect(x: 0, y: 0, width: 900, height: 300).fill()
+    let attributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.boldSystemFont(ofSize: fontSize),
+      .foregroundColor: NSColor.black
+    ]
+    NSAttributedString(string: text, attributes: attributes)
+      .draw(in: NSRect(x: 60, y: 105, width: 780, height: 110))
+    image.unlockFocus()
+
+    let document = PDFDocument()
+    guard let page = PDFPage(image: image) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    document.insert(page, at: 0)
+    guard document.write(to: url) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
     tempURLs.append(url)
     return url
   }
