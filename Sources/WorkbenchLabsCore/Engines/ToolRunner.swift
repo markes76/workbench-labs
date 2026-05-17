@@ -80,6 +80,8 @@ public final class ToolRunner: @unchecked Sendable {
       return try PDFOCRExtractor.run(input: input, options: options)
     case .imageConverter:
       return try ImageConverter.run(input: input, options: options)
+    case .batchImageResizer:
+      return try BatchImageResizer.run(input: input, options: options)
     case .videoConverter:
       return try VideoConverter.run(input: input, options: options)
     }

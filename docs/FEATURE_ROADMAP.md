@@ -24,14 +24,14 @@ Primary extension points:
 - PDF Page Editor: rotate, reorder, delete, extract ranges, and append pages with PDFKit.
 - PDF OCR Text Extractor: OCR scanned PDFs locally with Apple Vision/Tesseract, English/Hebrew language selection, and page-range selection.
 - PDF Metadata Scrubber: inspect metadata and write rebuilt PDFs with selected metadata fields blanked.
+- Batch Image Resizer/Compressor: resize, compress, strip metadata, and batch-convert images locally.
 
 ## P1: High-Value Tools
 
 ### Media
 
-1. Batch Image Resizer/Compressor: resize by width/height/scale, strip metadata, batch output.
-2. Video Clip & Audio Extract: trim by start/end, extract MP3/WAV/AAC, generate thumbnails.
-3. Image Metadata Inspector: EXIF/GPS/color profile inspection and scrub.
+1. Video Clip & Audio Extract: trim by start/end, extract MP3/WAV/AAC, generate thumbnails.
+2. Image Metadata Inspector: EXIF/GPS/color profile inspection and scrub.
 
 ### Developer Utilities
 

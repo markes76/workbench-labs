@@ -333,6 +333,20 @@ Key features:
 - Quality option for lossy formats.
 - Output defaults beside the source image unless a file path is provided.
 
+### Batch Image Resizer & Compressor
+
+Processes multiple image files locally for resize, format conversion, compression, and metadata stripping.
+
+Key features:
+- Add or drop multiple image files.
+- Resize by target width, target height, maximum dimension, or scale percentage.
+- Output to PNG, JPEG, HEIC, TIFF, or the original source format when supported.
+- Quality control for JPEG and HEIC output.
+- Optional metadata stripping.
+- Output defaults beside each source image unless an output folder is selected.
+- Collision-safe output names avoid overwriting existing files.
+- Reveal generated files in Finder.
+
 ### Video Converter
 
 Inspects and converts video files locally with `ffmpeg` and `ffprobe` when installed.
@@ -346,4 +360,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include batch image resizing, image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.

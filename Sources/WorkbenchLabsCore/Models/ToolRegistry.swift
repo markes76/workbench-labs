@@ -445,6 +445,36 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .batchImageResizer,
+      title: "Batch Image Resizer & Compressor",
+      subtitle: "Resize, compress, and strip metadata from multiple images locally.",
+      category: .media,
+      systemImage: "rectangle.resize",
+      inputPlaceholder: "Paste one image path per line, or drop image files...",
+      primaryActionTitle: "Process Images",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        ToolOption(key: "resizeMode", label: "Resize", kind: .picker, defaultValue: "max", choices: [
+          .init("none", "No resize"),
+          .init("width", "Width"),
+          .init("height", "Height"),
+          .init("max", "Max dimension"),
+          .init("scale", "Scale percent")
+        ]),
+        ToolOption(key: "width", label: "Width", kind: .integer, defaultValue: "1024", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "height", label: "Height", kind: .integer, defaultValue: "1024", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "maxDimension", label: "Max dimension", kind: .integer, defaultValue: "1600", minimumValue: 1, maximumValue: 20000),
+        ToolOption(key: "scalePercent", label: "Scale", kind: .integer, defaultValue: "50", minimumValue: 1, maximumValue: 1000),
+        ToolOption(key: "outputFormat", label: "Format", kind: .picker, defaultValue: "jpeg", choices: [
+          .init("original", "Original"), .init("png", "PNG"), .init("jpeg", "JPEG"), .init("heic", "HEIC"), .init("tiff", "TIFF")
+        ]),
+        ToolOption(key: "quality", label: "Quality", kind: .integer, defaultValue: "82", minimumValue: 1, maximumValue: 100),
+        ToolOption(key: "stripMetadata", label: "Strip metadata", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+      ]
+    ),
+    ToolDefinition(
       id: .videoConverter,
       title: "Video Converter",
       subtitle: "Inspect and transcode video locally with ffmpeg when installed.",

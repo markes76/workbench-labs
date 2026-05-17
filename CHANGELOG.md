@@ -10,6 +10,7 @@ All notable user-facing tool changes are tracked here.
 - PDF Toolkit: added tests covering generated output PDFs, page counts, page order, rotation, and generated-file metadata for the new page editing operations.
 - PDF OCR Text Extractor: added a dedicated local OCR tool for scanned PDFs using Apple Vision plus Tesseract-backed Hebrew support, with English/Hebrew language selection, page-range selection, per-page output, confidence summaries, and metadata for processed pages and recognized lines.
 - PDF Toolkit: added metadata inspection for creator, producer, keywords, and date fields plus a Scrub Metadata operation that writes a rebuilt PDF with selected metadata fields blanked.
+- Batch Image Resizer & Compressor: added a local multi-image workflow for resizing by width, height, maximum dimension, or scale percentage, output format conversion, quality control, metadata stripping, and collision-safe generated files.
 
 ### Changed
 
