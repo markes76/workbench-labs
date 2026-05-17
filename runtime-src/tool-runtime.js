@@ -9,6 +9,7 @@ import MarkdownIt from "markdown-it";
 import he from "he";
 import { diff_match_patch } from "diff-match-patch";
 import JSON5 from "json5";
+import Ajv from "ajv";
 
 const md = new MarkdownIt({
   html: false,
@@ -258,6 +259,47 @@ function formatJSON(input, options = {}, minify = false) {
   });
 }
 
+function validateJSONSchema(input, options = {}) {
+  const schemaInput = String(options.secondaryInput || "").trim();
+  if (!schemaInput) {
+    throw new Error("JSON Schema input is required.");
+  }
+
+  const document = JSON.parse(input);
+  const schema = JSON.parse(schemaInput);
+  const ajv = new Ajv({
+    allErrors: true,
+    strict: Boolean(options.strictSchema),
+    allowUnionTypes: true,
+    verbose: true
+  });
+  const validate = ajv.compile(schema);
+  const valid = validate(document);
+
+  if (valid) {
+    return result("Valid JSON\n\nThe document matches the provided JSON Schema.", {
+      valid: true,
+      errorCount: 0
+    });
+  }
+
+  const errors = validate.errors || [];
+  const output = [
+    `Invalid JSON (${errors.length} ${errors.length === 1 ? "error" : "errors"})`,
+    "",
+    ...errors.map((error, index) => {
+      const path = error.instancePath || "/";
+      const schemaPath = error.schemaPath || "#";
+      return `${index + 1}. ${path}: ${error.message || "schema validation failed"} (${schemaPath})`;
+    })
+  ].join("\n");
+
+  return result(output, {
+    valid: false,
+    errorCount: errors.length
+  });
+}
+
 async function run(request) {
   const input = normalizeJSON(request.input);
   const options = request.options || {};
@@ -271,6 +313,9 @@ async function run(request) {
     case "json5": {
       const parsed = parseJSON5(input);
       return result(JSON.stringify(parsed, null, Number(options.indent || 2)), { valid: true });
+    }
+    case "json-schema": {
+      return validateJSONSchema(input, options);
     }
     case "yaml-to-json": {
       const parsed = yaml.load(input);

@@ -12,7 +12,7 @@ struct ToolOptionsView: View {
     } else {
       ScrollView(.horizontal) {
         HStack(spacing: 14) {
-          ForEach(definition.options.filter { !(definition.id == .textDiff && $0.key == "secondaryInput") }) { option in
+          ForEach(definition.options.filter { !hideOptionFromToolbar($0) }) { option in
             optionControl(option)
           }
         }
@@ -21,6 +21,11 @@ struct ToolOptionsView: View {
       }
       .background(.bar)
     }
+  }
+
+  private func hideOptionFromToolbar(_ option: ToolOption) -> Bool {
+    option.key == "secondaryInput" &&
+      (definition.id == .textDiff || definition.id == .envInspector || definition.id == .gitDiffIgnoreHelper)
   }
 
   @ViewBuilder

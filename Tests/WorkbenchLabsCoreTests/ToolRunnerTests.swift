@@ -5,9 +5,36 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 31)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 31)
+    XCTAssertEqual(ToolRegistry.all.count, 37)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 37)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == "JSON Schema Validator" })
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == ".env Inspector & Comparator" })
+    XCTAssertTrue(ToolRegistry.all.contains { $0.title == "Git Diff & Ignore Helper" })
+  }
+
+  func testRoadmapCategoriesExistInStableSidebarOrder() {
+    XCTAssertEqual(ToolCategory.allCases, [
+      .inspect,
+      .security,
+      .format,
+      .encode,
+      .apiNetwork,
+      .generate,
+      .developer,
+      .document,
+      .database,
+      .media
+    ])
+  }
+
+  func testGroupedRegistryCategorizesEveryToolExactlyOnce() {
+    let groupedIDs = ToolRegistry.grouped().flatMap { $0.1.map(\.id) }
+    let registeredIDs = ToolRegistry.all.map(\.id)
+
+    XCTAssertEqual(groupedIDs.count, registeredIDs.count)
+    XCTAssertEqual(Set(groupedIDs), Set(registeredIDs))
+    XCTAssertEqual(Set(groupedIDs).count, groupedIDs.count)
   }
 
   func testHTMLPreviewPolicyBlocksExternalRequestsByDefault() {
@@ -59,6 +86,145 @@ final class ToolRunnerTests: XCTestCase {
     let result = try await runner.run(toolID: .jsonFormatter, input: #"{"b":2,"a":1}"#, options: options)
     XCTAssertTrue(result.output.contains(#""a": 1"#))
     XCTAssertTrue(result.output.contains(#""b": 2"#))
+  }
+
+  func testJSONSchemaRuntimeReportsValidDocuments() throws {
+    var options = ToolOptions()
+    options.secondaryInput = #"{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}"#
+
+    let result = try JavaScriptToolRunner().run(
+      tool: "json-schema",
+      input: #"{"name":"Workbench Labs"}"#,
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Valid JSON"))
+    XCTAssertEqual(result.metadata["valid"], "true")
+    XCTAssertEqual(result.metadata["errorCount"], "0")
+  }
+
+  func testJSONSchemaRuntimeReportsValidationErrorsWithPaths() throws {
+    var options = ToolOptions()
+    options.secondaryInput = #"{"type":"object","required":["name"],"properties":{"name":{"type":"string"},"count":{"type":"integer","minimum":1}}}"#
+
+    let result = try JavaScriptToolRunner().run(
+      tool: "json-schema",
+      input: #"{"count":0}"#,
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Invalid JSON"))
+    XCTAssertTrue(result.output.contains("/count"))
+    XCTAssertTrue(result.output.contains("must be >= 1"))
+    XCTAssertTrue(result.output.contains("must have required property 'name'"))
+    XCTAssertEqual(result.metadata["valid"], "false")
+    XCTAssertEqual(result.metadata["errorCount"], "2")
+  }
+
+  func testJSONSchemaValidatorRunsThroughToolRunner() async throws {
+    var options = ToolRegistry.definition(for: .jsonSchemaValidator).defaultOptions
+    options.secondaryInput = #"{"type":"object","required":["enabled"],"properties":{"enabled":{"type":"boolean"}}}"#
+
+    let result = try await runner.run(toolID: .jsonSchemaValidator, input: #"{"enabled":true}"#, options: options)
+
+    XCTAssertTrue(result.output.contains("Valid JSON"))
+    XCTAssertEqual(result.metadata["valid"], "true")
+  }
+
+  func testEnvInspectorSummarizesWithoutLeakingValuesByDefault() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "inspect"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=super-secret-token\nPUBLIC_URL=https://example.com\nEMPTY=\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("3 keys"))
+    XCTAssertTrue(result.output.contains("API_KEY"))
+    XCTAssertTrue(result.output.contains("PUBLIC_URL"))
+    XCTAssertFalse(result.output.contains("super-secret-token"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
+    XCTAssertEqual(result.metadata["keyCount"], "3")
+  }
+
+  func testEnvInspectorCompareReportsAddedRemovedChangedAndMissingKeys() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "compare"
+    options.secondaryInput = "API_KEY=changed\nDATABASE_URL=postgres://example\nNEW_FLAG=true\n"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=old\nPUBLIC_URL=https://example.com\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("Changed keys: API_KEY"))
+    XCTAssertTrue(result.output.contains("Removed keys: PUBLIC_URL"))
+    XCTAssertTrue(result.output.contains("Added keys: DATABASE_URL, NEW_FLAG"))
+    XCTAssertTrue(result.output.contains("Missing in right: PUBLIC_URL"))
+    XCTAssertTrue(result.output.contains("Missing in left: DATABASE_URL, NEW_FLAG"))
+    XCTAssertFalse(result.output.contains("postgres://example"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
+  }
+
+  func testEnvInspectorRedactsValuesAndPreservesKeyNames() async throws {
+    var options = ToolRegistry.definition(for: .envInspector).defaultOptions
+    options.operation = "redact"
+
+    let result = try await runner.run(
+      toolID: .envInspector,
+      input: "API_KEY=super-secret-token\nexport PUBLIC_URL=https://example.com\n# comment\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("API_KEY=<redacted>"))
+    XCTAssertTrue(result.output.contains("export PUBLIC_URL=<redacted>"))
+    XCTAssertTrue(result.output.contains("# comment"))
+    XCTAssertFalse(result.output.contains("super-secret-token"))
+    XCTAssertFalse(result.output.contains("https://example.com"))
+  }
+
+  func testGitDiffIgnoreHelperSummarizesChangedFiles() async throws {
+    let gitURL = try XCTUnwrap(localExecutable(named: "git"))
+    let repoURL = try makeTemporaryGitRepository(gitURL: gitURL)
+    defer { try? FileManager.default.removeItem(at: repoURL) }
+
+    try "first\n".write(to: repoURL.appendingPathComponent("tracked.txt"), atomically: true, encoding: .utf8)
+    try runGit(gitURL, ["add", "tracked.txt"], in: repoURL)
+    try runGit(gitURL, ["-c", "user.name=Workbench Labs", "-c", "user.email=workbench@example.com", "commit", "-m", "initial"], in: repoURL)
+    try "changed\n".write(to: repoURL.appendingPathComponent("tracked.txt"), atomically: true, encoding: .utf8)
+    try "scratch\n".write(to: repoURL.appendingPathComponent("scratch.log"), atomically: true, encoding: .utf8)
+
+    var options = ToolRegistry.definition(for: .gitDiffIgnoreHelper).defaultOptions
+    options.operation = "inspect"
+    let result = try await runner.run(toolID: .gitDiffIgnoreHelper, input: repoURL.path, options: options)
+
+    XCTAssertTrue(result.output.contains("Git Repository Inspect"))
+    XCTAssertTrue(result.output.contains("Modified: tracked.txt"), result.output)
+    XCTAssertTrue(result.output.contains("Untracked: scratch.log"), result.output)
+    XCTAssertTrue(result.output.contains("Read-only git commands"), result.output)
+    XCTAssertEqual(result.metadata["changedFileCount"], "2")
+  }
+
+  func testGitDiffIgnoreHelperTestsIgnorePatternsAgainstPaths() async throws {
+    var options = ToolRegistry.definition(for: .gitDiffIgnoreHelper).defaultOptions
+    options.operation = "ignoreCheck"
+    options.secondaryInput = "build/app.o\nnotes.txt\nerror.log\nimportant.log\n"
+
+    let result = try await runner.run(
+      toolID: .gitDiffIgnoreHelper,
+      input: "build/\n*.log\n!important.log\n",
+      options: options
+    )
+
+    XCTAssertTrue(result.output.contains("IGNORED  build/app.o"), result.output)
+    XCTAssertTrue(result.output.contains("IGNORED  error.log"), result.output)
+    XCTAssertTrue(result.output.contains("KEPT     notes.txt"), result.output)
+    XCTAssertTrue(result.output.contains("KEPT     important.log"), result.output)
+    XCTAssertEqual(result.metadata["ignoredCount"], "2")
+    XCTAssertEqual(result.metadata["keptCount"], "2")
   }
 
   func testYAMLToJSONUsesBundledRuntime() async throws {
@@ -131,5 +297,36 @@ final class ToolRunnerTests: XCTestCase {
     XCTAssertEqual(result.output, "QR code generated.")
     XCTAssertNotNil(result.imagePNGBase64)
     XCTAssertGreaterThan(Data(base64Encoded: result.imagePNGBase64 ?? "")?.count ?? 0, 100)
+  }
+
+  private func makeTemporaryGitRepository(gitURL: URL) throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("WorkbenchLabsGitTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    try runGit(gitURL, ["init"], in: url)
+    return url
+  }
+
+  private func runGit(_ gitURL: URL, _ arguments: [String], in directoryURL: URL) throws {
+    let process = Process()
+    process.executableURL = gitURL
+    process.arguments = arguments
+    process.currentDirectoryURL = directoryURL
+    process.standardOutput = Pipe()
+    process.standardError = Pipe()
+    try process.run()
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationStatus, 0, "git \(arguments.joined(separator: " ")) failed")
+  }
+
+  private func localExecutable(named name: String) -> URL? {
+    [
+      "/opt/homebrew/bin/\(name)",
+      "/usr/local/bin/\(name)",
+      "/usr/bin/\(name)",
+      "/bin/\(name)"
+    ]
+      .first { FileManager.default.isExecutableFile(atPath: $0) }
+      .map(URL.init(fileURLWithPath:))
   }
 }
