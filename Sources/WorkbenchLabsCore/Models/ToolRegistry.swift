@@ -475,6 +475,25 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .imageMetadataInspector,
+      title: "Image Metadata Inspector",
+      subtitle: "Inspect image metadata and remove GPS location data before sharing.",
+      category: .media,
+      systemImage: "location.slash",
+      inputPlaceholder: "Paste or drop one or more image file paths...",
+      primaryActionTitle: "Process Images",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        operationOption([("inspect", "Inspect"), ("scrub", "Scrub")]),
+        ToolOption(key: "removeGPS", label: "Remove GPS location", kind: .boolean, defaultValue: "true"),
+        ToolOption(key: "removeCameraMetadata", label: "Remove camera metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "removeDescriptiveMetadata", label: "Remove descriptive metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "removeAllMetadata", label: "Remove all metadata", kind: .boolean, defaultValue: "false"),
+        ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+      ]
+    ),
+    ToolDefinition(
       id: .videoConverter,
       title: "Video Converter",
       subtitle: "Inspect and transcode video locally with ffmpeg when installed.",

@@ -347,6 +347,20 @@ Key features:
 - Collision-safe output names avoid overwriting existing files.
 - Reveal generated files in Finder.
 
+### Image Metadata Inspector
+
+Inspects image metadata locally and writes safer sharing copies with GPS location data removed.
+
+Key features:
+- Inspect image dimensions, frame count, DPI, color model, and color profile.
+- Detect GPS location metadata and report latitude/longitude when present.
+- Flag images that carry geolocation metadata as a privacy risk.
+- Scrub GPS location metadata by default without changing the original file.
+- Optional camera metadata, descriptive metadata, or full metadata removal.
+- Output defaults beside each source image unless an output folder is selected.
+- Collision-safe output names avoid overwriting existing files.
+- Reveal generated scrubbed images in Finder.
+
 ### Video Converter
 
 Inspects and converts video files locally with `ffmpeg` and `ffprobe` when installed.
@@ -360,4 +374,4 @@ Key features:
 
 ## Roadmap
 
-The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include image metadata inspection, richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+The current roadmap is maintained in [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md). Planned areas include richer video clipping, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
