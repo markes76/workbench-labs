@@ -60,6 +60,7 @@ public enum ToolID: String, CaseIterable, Codable, Identifiable, Sendable {
   case qrCode
   case hashGenerator
   case pdfToolkit
+  case pdfOCR
   case imageConverter
   case videoConverter
 

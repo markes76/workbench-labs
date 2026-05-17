@@ -398,6 +398,25 @@ public enum ToolRegistry {
       ]
     ),
     ToolDefinition(
+      id: .pdfOCR,
+      title: "PDF OCR Text Extractor",
+      subtitle: "Extract English and Hebrew text from scanned PDFs locally.",
+      category: .document,
+      systemImage: "text.viewfinder",
+      inputPlaceholder: "Paste or drop one PDF path...",
+      primaryActionTitle: "Run OCR",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "languages", label: "Language", kind: .picker, defaultValue: "en", choices: [
+          .init("en", "English"),
+          .init("he", "Hebrew"),
+          .init("en-he", "English + Hebrew")
+        ])
+      ]
+    ),
+    ToolDefinition(
       id: .imageConverter,
       title: "Image Converter",
       subtitle: "Inspect and convert images locally with macOS ImageIO.",
