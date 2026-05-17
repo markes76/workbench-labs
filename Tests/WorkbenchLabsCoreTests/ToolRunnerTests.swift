@@ -5,9 +5,33 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 31)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 31)
+    XCTAssertEqual(ToolRegistry.all.count, 33)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 33)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
+  }
+
+  func testRoadmapCategoriesExistInStableSidebarOrder() {
+    XCTAssertEqual(ToolCategory.allCases, [
+      .inspect,
+      .security,
+      .format,
+      .encode,
+      .apiNetwork,
+      .generate,
+      .developer,
+      .document,
+      .database,
+      .media
+    ])
+  }
+
+  func testGroupedRegistryCategorizesEveryToolExactlyOnce() {
+    let groupedIDs = ToolRegistry.grouped().flatMap { $0.1.map(\.id) }
+    let registeredIDs = ToolRegistry.all.map(\.id)
+
+    XCTAssertEqual(groupedIDs.count, registeredIDs.count)
+    XCTAssertEqual(Set(groupedIDs), Set(registeredIDs))
+    XCTAssertEqual(Set(groupedIDs).count, groupedIDs.count)
   }
 
   func testHTMLPreviewPolicyBlocksExternalRequestsByDefault() {
