@@ -34,7 +34,7 @@ public enum ToolRegistry {
       id: .jwtDebugger,
       title: "JWT Debugger",
       subtitle: "Decode JSON Web Tokens and verify HS256/HS384/HS512 signatures.",
-      category: .inspect,
+      category: .security,
       systemImage: "key.viewfinder",
       inputPlaceholder: "Paste a JWT...",
       sampleInput: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRldiBXb3JrYmVuY2giLCJpYXQiOjE1MTYyMzkwMjJ9.invalid",
@@ -95,7 +95,7 @@ public enum ToolRegistry {
       id: .secretScanner,
       title: "Secret Scanner & Redactor",
       subtitle: "Find and redact tokens, private keys, credentials, and secret-looking config values.",
-      category: .inspect,
+      category: .security,
       systemImage: "shield.lefthalf.filled.badge.checkmark",
       inputPlaceholder: "Paste logs, headers, .env files, stack traces, or config...",
       primaryActionTitle: "Scan",
@@ -260,7 +260,7 @@ public enum ToolRegistry {
       id: .urlCodec,
       title: "URL Encoder & Decoder",
       subtitle: "Percent-encode and decode URL components.",
-      category: .encode,
+      category: .apiNetwork,
       systemImage: "link",
       inputPlaceholder: "Paste URL text...",
       sampleInput: "hello world?x=1&y=two words",
@@ -286,7 +286,7 @@ public enum ToolRegistry {
       id: .queryParser,
       title: "Query String & URL Parser",
       subtitle: "Parse URLs and query strings into structured JSON.",
-      category: .encode,
+      category: .apiNetwork,
       systemImage: "list.bullet.rectangle",
       inputPlaceholder: "Paste a URL or query string...",
       sampleInput: "https://example.com/search?q=dev%20tools&page=1"
@@ -356,7 +356,7 @@ public enum ToolRegistry {
       id: .hashGenerator,
       title: "Hash Generator",
       subtitle: "Generate MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes.",
-      category: .generate,
+      category: .security,
       systemImage: "number.square",
       inputPlaceholder: "Paste text to hash...",
       sampleInput: "WorkbenchLabs",
@@ -370,7 +370,7 @@ public enum ToolRegistry {
     ToolDefinition(
       id: .pdfToolkit,
       title: "PDF Toolkit",
-      subtitle: "Inspect, extract text, merge, and split PDFs locally.",
+      subtitle: "Inspect, edit pages, merge, split, and extract PDFs locally.",
       category: .document,
       systemImage: "doc.richtext",
       inputPlaceholder: "Paste one PDF path per line, or drop PDF files...",
@@ -382,11 +382,38 @@ public enum ToolRegistry {
           ("inspect", "Inspect"),
           ("extractText", "Extract Text"),
           ("merge", "Merge"),
-          ("split", "Split Pages")
+          ("split", "Split Pages"),
+          ("extractPages", "Extract Pages"),
+          ("deletePages", "Delete Pages"),
+          ("reorderPages", "Reorder Pages"),
+          ("rotatePages", "Rotate Pages"),
+          ("appendPages", "Append Pages")
         ]),
         ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "rotation", label: "Rotation", kind: .picker, defaultValue: "90", choices: [
+          .init("90", "90 degrees"), .init("180", "180 degrees"), .init("270", "270 degrees")
+        ]),
         ToolOption(key: "outputPath", label: "Output file", kind: .text, defaultValue: ""),
         ToolOption(key: "outputDirectory", label: "Output folder", kind: .text, defaultValue: "")
+      ]
+    ),
+    ToolDefinition(
+      id: .pdfOCR,
+      title: "PDF OCR Text Extractor",
+      subtitle: "Extract English and Hebrew text from scanned PDFs locally.",
+      category: .document,
+      systemImage: "text.viewfinder",
+      inputPlaceholder: "Paste or drop one PDF path...",
+      primaryActionTitle: "Run OCR",
+      sampleInput: "",
+      capabilities: [.textInput, .fileInput],
+      options: [
+        ToolOption(key: "pages", label: "Pages", kind: .text, defaultValue: "all"),
+        ToolOption(key: "languages", label: "Language", kind: .picker, defaultValue: "en", choices: [
+          .init("en", "English"),
+          .init("he", "Hebrew"),
+          .init("en-he", "English + Hebrew")
+        ])
       ]
     ),
     ToolDefinition(

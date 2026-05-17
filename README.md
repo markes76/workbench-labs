@@ -10,9 +10,9 @@ Workbench Labs is an open-source native macOS developer utility workbench. It is
 
 - Native macOS app for macOS 14+
 - Searchable tool sidebar, clipboard inspection, menu bar access, and macOS Services integration
-- Swift-native tools for timestamps, Base64, URL/query parsing, hashes, UUIDs, QR codes, PDF operations, image conversion, video conversion, and more
+- Swift-native tools for timestamps, Base64, URL/query parsing, hashes, UUIDs, QR codes, PDF page editing, multilingual PDF OCR, image conversion, video conversion, and more
 - Bundled JavaScript runtime for mature formatters and converters such as JSON, HTML, CSS, JavaScript, XML, YAML, SQL, Markdown, diff, and HTML/SVG to JSX
-- Local file workflows for PDF split/merge, image conversion, and video/audio extraction
+- Local file workflows for PDF split/merge/page editing, image conversion, and video/audio extraction
 - No hosted service requirement for normal tool execution
 
 ## Screenshots
@@ -29,16 +29,20 @@ Workbench Labs is an open-source native macOS developer utility workbench. It is
 - Format/Convert: JSON, HTML, CSS, JavaScript, XML, YAML/JSON, SQL, number bases, string case, HTML/SVG to JSX
 - Encode/Decode: URL, Base64, query strings, HTML entities, backslash escaping
 - Generate/Crypto: UUID/ULID-style UUID workflows, Lorem Ipsum, QR code, hash generation
-- PDF & Documents: inspect PDFs, extract selectable text, merge PDFs, split selected pages
+- PDF & Documents: inspect PDFs, extract selectable text, OCR scanned PDFs locally in English and Hebrew, merge PDFs, split selected pages, extract page ranges into one PDF, delete pages, reorder pages, rotate pages, and append pages from other PDFs
 - Image & Video: inspect/convert images, inspect/transcode video, extract MP3 audio from video
 
 See every tool and workflow in the [complete feature guide](docs/FEATURES.md).
 
 ## Roadmap at a Glance
 
-Planned future builds include PDF page editing, PDF OCR, metadata scrubbing, batch image resizing, richer video clipping, image metadata inspection, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
+Planned future builds include PDF metadata scrubbing, batch image resizing, richer video clipping, image metadata inspection, JSON Schema validation, `.env` inspection, certificate inspection, SQLite browsing, HTTP request tooling, cURL import/export, OpenAPI exploration, archive inspection, cron expression explanation, and dependency lockfile inspection.
 
 See the full future roadmap in [docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md).
+
+## Change Tracking
+
+User-facing tool releases are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Agentic Roadmap Workflow
 
@@ -97,11 +101,13 @@ The zip is written to `dist/WorkbenchLabs-macos.zip` by default. Set `ZIP_BASENA
 - macOS 14 or newer
 - Xcode command line tools or a compatible Swift 6 toolchain
 - Node.js and npm for rebuilding the bundled formatter runtime
+- Optional: `tesseract` and `tesseract-lang` for Hebrew PDF OCR
 - Optional: `ffmpeg` and `ffprobe` for video conversion, WebM/GIF output, and MP3 extraction
 
-Install optional video tooling with Homebrew:
+Install optional OCR and video tooling with Homebrew:
 
 ```sh
+brew install tesseract tesseract-lang
 brew install ffmpeg
 ```
 
