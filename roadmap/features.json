@@ -1,0 +1,366 @@
+[
+  {
+    "id": "tool-categories",
+    "title": "Dedicated Tool Categories",
+    "priority": "P0",
+    "area": "foundation",
+    "branch": "feature/tool-categories",
+    "summary": "Add Security, Databases, API & Network, and Developer categories so future tools are grouped cleanly.",
+    "acceptance": [
+      "ToolCategory includes the new categories without breaking existing tools.",
+      "Sidebar grouping remains stable and searchable.",
+      "Registry tests verify all tools are categorized exactly once."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "external-process-runner",
+    "title": "Reusable External Process Runner",
+    "priority": "P0",
+    "area": "foundation",
+    "branch": "feature/external-process-runner",
+    "summary": "Extract a shared runner for ffmpeg, git, sqlite3, openssl, curl, and future local binaries.",
+    "acceptance": [
+      "Runner captures stdout, stderr, exit code, timeout, and executable lookup failures.",
+      "VideoConverter uses the shared runner without behavior regressions.",
+      "Tests cover success, failure, missing executable, and timeout cases."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "file-result-handling",
+    "title": "Shared File Result Handling",
+    "priority": "P0",
+    "area": "foundation",
+    "branch": "feature/file-result-handling",
+    "summary": "Improve generated-file UX with explicit file URLs, Finder reveal actions, and shared save/open panels.",
+    "acceptance": [
+      "PDF, image, and video tools expose generated file URLs consistently.",
+      "Views use shared reveal/copy/save controls where possible.",
+      "Collision-safe output behavior is preserved."
+    ],
+    "tests": ["swift test", "./script/build_and_run.sh --build"]
+  },
+  {
+    "id": "pdf-page-editor",
+    "title": "PDF Page Editor",
+    "priority": "P1",
+    "area": "pdf",
+    "branch": "feature/pdf-page-editor",
+    "summary": "Add local PDF page editing: rotate, reorder, delete, extract ranges, and append pages with PDFKit.",
+    "acceptance": [
+      "User can choose PDF pages and apply rotate, reorder, delete, extract, and append operations.",
+      "Operations produce real PDF files beside the source file by default.",
+      "Tests validate page counts and operation results with generated fixture PDFs."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "pdf-ocr",
+    "title": "PDF OCR Text Extractor",
+    "priority": "P1",
+    "area": "pdf",
+    "branch": "feature/pdf-ocr",
+    "summary": "Use Vision and PDFKit page rendering to extract text from scanned PDFs locally.",
+    "acceptance": [
+      "OCR runs locally without network calls.",
+      "User can choose page ranges.",
+      "Output includes recognized text and confidence/diagnostic notes where available."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "pdf-metadata-scrubber",
+    "title": "PDF Metadata Scrubber",
+    "priority": "P1",
+    "area": "pdf",
+    "branch": "feature/pdf-metadata-scrubber",
+    "summary": "Remove title, author, subject, producer, and other metadata from PDFs.",
+    "acceptance": [
+      "Inspect mode shows metadata fields before scrubbing.",
+      "Scrub mode writes a new PDF without selected metadata fields.",
+      "Tests verify metadata removal and page preservation."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "batch-image-resizer",
+    "title": "Batch Image Resizer and Compressor",
+    "priority": "P1",
+    "area": "media",
+    "branch": "feature/batch-image-resizer",
+    "summary": "Resize, compress, strip metadata, and batch-convert images locally.",
+    "acceptance": [
+      "Users can process multiple image paths.",
+      "Resize by width, height, max dimension, or scale.",
+      "Output defaults beside each source image and avoids overwrites."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "video-clip-audio",
+    "title": "Video Clip and Audio Extract",
+    "priority": "P1",
+    "area": "media",
+    "branch": "feature/video-clip-audio",
+    "summary": "Trim video by start/end time, extract MP3/WAV/AAC, and generate thumbnails with ffmpeg.",
+    "acceptance": [
+      "Video Converter supports trim start/end controls.",
+      "Audio extraction supports MP3, WAV, and AAC.",
+      "Generated outputs default to the source video folder."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "image-metadata-inspector",
+    "title": "Image Metadata Inspector",
+    "priority": "P1",
+    "area": "media",
+    "branch": "feature/image-metadata-inspector",
+    "summary": "Inspect and optionally scrub EXIF, GPS, color profile, and common image metadata.",
+    "acceptance": [
+      "Image Converter inspect output includes common metadata sections.",
+      "Scrub mode writes a metadata-reduced copy where supported.",
+      "Tests cover metadata-free and metadata-present images."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "json-schema-validator",
+    "title": "JSON Schema Validator",
+    "priority": "P1",
+    "area": "developer",
+    "branch": "feature/json-schema-validator",
+    "summary": "Validate JSON input against JSON Schema using a bundled offline validator.",
+    "acceptance": [
+      "User can enter JSON and schema side-by-side.",
+      "Output lists validation errors with paths.",
+      "Runtime works offline after npm dependencies are vendored."
+    ],
+    "tests": ["swift test", "npm run test:runtime"]
+  },
+  {
+    "id": "env-inspector",
+    "title": ".env Inspector and Comparator",
+    "priority": "P1",
+    "area": "developer",
+    "branch": "feature/env-inspector",
+    "summary": "Parse, compare, redact, and report missing keys across .env-style files.",
+    "acceptance": [
+      "Tool parses .env content without leaking values in reports by default.",
+      "Comparator reports added, removed, changed, and missing keys.",
+      "Secret-looking values are redacted."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "git-diff-ignore-helper",
+    "title": "Git Diff and Ignore Helper",
+    "priority": "P1",
+    "area": "developer",
+    "branch": "feature/git-diff-ignore-helper",
+    "summary": "Use local git to inspect diffs and help build .gitignore patterns.",
+    "acceptance": [
+      "Tool can inspect a repository path and summarize changed files.",
+      "Tool can test ignore patterns against paths.",
+      "No destructive git commands are used."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "certificate-inspector",
+    "title": "Certificate Inspector",
+    "priority": "P1",
+    "area": "security",
+    "branch": "feature/certificate-inspector",
+    "summary": "Inspect PEM/DER certificates, expiry, SANs, issuer, subject, and fingerprints.",
+    "acceptance": [
+      "Tool accepts PEM text and certificate file paths.",
+      "Output includes validity, SANs, issuer, subject, and SHA fingerprints.",
+      "Expired and near-expiry certificates surface diagnostics."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "jwt-jwk-verifier",
+    "title": "JWT and JWK Verifier Upgrade",
+    "priority": "P1",
+    "area": "security",
+    "branch": "feature/jwt-jwk-verifier",
+    "summary": "Extend JWT verification to RS256/ES256 with JWK import and claims linting.",
+    "acceptance": [
+      "JWT debugger supports HS256/384/512 and RS256/ES256 verification paths.",
+      "JWK input supports key selection by kid.",
+      "Claims linting flags expiry, not-before, issuer, audience, and algorithm concerns."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "file-hash-hmac",
+    "title": "File Hash and HMAC Tool",
+    "priority": "P1",
+    "area": "security",
+    "branch": "feature/file-hash-hmac",
+    "summary": "Add streaming file hashes, HMAC, and checksum manifest verification.",
+    "acceptance": [
+      "Hash tool supports text and file path input.",
+      "Large files are hashed without loading the entire file into memory.",
+      "Manifest verification reports pass/fail per file."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "sqlite-browser",
+    "title": "SQLite Browser and Query Runner",
+    "priority": "P1",
+    "area": "databases",
+    "branch": "feature/sqlite-browser",
+    "summary": "Browse SQLite schema, preview tables, run queries, explain plans, and export CSV/JSON.",
+    "acceptance": [
+      "Tool opens local SQLite database files read-only by default.",
+      "Schema, tables, columns, indexes, and preview rows are visible.",
+      "Query results can be copied or exported."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "connection-string-parser",
+    "title": "Connection String Parser",
+    "priority": "P1",
+    "area": "databases",
+    "branch": "feature/connection-string-parser",
+    "summary": "Safely parse and redact PostgreSQL, MySQL, SQLite, and common service URLs.",
+    "acceptance": [
+      "Output separates protocol, user, password redaction, host, port, database, and parameters.",
+      "Redacted output is the default.",
+      "Invalid URLs produce actionable diagnostics."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "sqlite-schema-diff",
+    "title": "SQLite Schema Diff",
+    "priority": "P1",
+    "area": "databases",
+    "branch": "feature/sqlite-schema-diff",
+    "summary": "Compare schemas across two SQLite database files.",
+    "acceptance": [
+      "Tool reports added, removed, and changed tables, columns, indexes, and triggers.",
+      "Diff output is stable and copyable.",
+      "Tests create fixture databases locally."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "http-request-builder",
+    "title": "HTTP Request Builder",
+    "priority": "P1",
+    "area": "api-network",
+    "branch": "feature/http-request-builder",
+    "summary": "Build local URLSession-based HTTP requests with headers, body, timing, and safe auth display.",
+    "acceptance": [
+      "Tool supports method, URL, headers, and body input.",
+      "Response includes status, timing, headers, and body preview.",
+      "Sensitive headers are redacted in saved output by default."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "curl-import-export",
+    "title": "cURL Import and Export",
+    "priority": "P1",
+    "area": "api-network",
+    "branch": "feature/curl-import-export",
+    "summary": "Import cURL commands into structured requests and export structured requests back to cURL.",
+    "acceptance": [
+      "Common cURL flags are parsed into method, headers, URL, and body.",
+      "Generated cURL output quotes values safely.",
+      "Parser avoids executing user-provided shell content."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "openapi-explorer",
+    "title": "OpenAPI Explorer",
+    "priority": "P1",
+    "area": "api-network",
+    "branch": "feature/openapi-explorer",
+    "summary": "Explore local OpenAPI JSON/YAML files and generate request templates.",
+    "acceptance": [
+      "Tool parses local OpenAPI 3 JSON and YAML documents.",
+      "Endpoints are searchable by path, method, tag, and summary.",
+      "Selected endpoint can populate HTTP Request Builder input."
+    ],
+    "tests": ["swift test", "npm run test:runtime"]
+  },
+  {
+    "id": "plist-converter",
+    "title": "Plist, JSON, and YAML Converter",
+    "priority": "P2",
+    "area": "developer",
+    "branch": "feature/plist-converter",
+    "summary": "Convert property lists to and from JSON/YAML using local serializers.",
+    "acceptance": [
+      "Tool reads XML and binary plist files.",
+      "Tool converts plist to JSON and JSON to plist.",
+      "Errors identify unsupported value types."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "archive-inspector",
+    "title": "Archive Inspector",
+    "priority": "P2",
+    "area": "developer",
+    "branch": "feature/archive-inspector",
+    "summary": "Inspect zip and tar archives locally without extracting everything by default.",
+    "acceptance": [
+      "Tool lists archive entries, sizes, modified dates, and compression info.",
+      "Extraction is explicit and output defaults beside the source archive.",
+      "Path traversal entries are detected and blocked."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "cron-expression-explainer",
+    "title": "Cron Expression Explainer",
+    "priority": "P2",
+    "area": "developer",
+    "branch": "feature/cron-expression-explainer",
+    "summary": "Explain cron expressions and show upcoming run times.",
+    "acceptance": [
+      "Tool validates common 5-field cron syntax.",
+      "Output explains schedule in plain language.",
+      "Output lists upcoming run times in local timezone."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "local-static-server",
+    "title": "Local Static File Server",
+    "priority": "P2",
+    "area": "developer",
+    "branch": "feature/local-static-server",
+    "summary": "Serve a local folder for quick previews with safe defaults.",
+    "acceptance": [
+      "Tool starts and stops a local server for a selected folder.",
+      "Server binds to localhost by default.",
+      "UI displays the local URL and server logs."
+    ],
+    "tests": ["swift test"]
+  },
+  {
+    "id": "lockfile-inspector",
+    "title": "Dependency Lockfile Inspector",
+    "priority": "P2",
+    "area": "developer",
+    "branch": "feature/lockfile-inspector",
+    "summary": "Inspect package-lock, Package.resolved, Podfile.lock, and similar dependency lockfiles.",
+    "acceptance": [
+      "Tool summarizes dependencies, versions, sources, and duplicate packages.",
+      "Known lockfile formats are detected automatically.",
+      "Output is copyable as JSON or text."
+    ],
+    "tests": ["swift test"]
+  }
+]

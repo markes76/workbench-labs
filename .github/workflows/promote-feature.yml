@@ -1,0 +1,38 @@
+name: Promote Feature
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_id:
+        description: "Roadmap feature id to promote from feature/<id> into main"
+        required: true
+      merge_method:
+        description: "Merge method"
+        required: true
+        default: squash
+        type: choice
+        options:
+          - squash
+          - merge
+          - rebase
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: Promote approved feature
+    runs-on: ubuntu-latest
+    environment: human-approval
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Promote feature PR
+        run: python3 script/promote_feature.py "${{ inputs.feature_id }}" --merge-method "${{ inputs.merge_method }}"

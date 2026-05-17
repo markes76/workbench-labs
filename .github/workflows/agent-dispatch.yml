@@ -1,0 +1,42 @@
+name: Agent Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_id:
+        description: "Roadmap feature id"
+        required: true
+      provider:
+        description: "Agent provider"
+        required: true
+        default: copilot
+        type: choice
+        options:
+          - copilot
+          - manual
+          - codex
+      feedback:
+        description: "Optional human feedback to include"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  dispatch:
+    name: Dispatch feature agent
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.COPILOT_AGENT_TOKEN || github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Dispatch agent task
+        run: |
+          python3 script/start_agent_task.py "${{ inputs.feature_id }}" \
+            --provider "${{ inputs.provider }}" \
+            --feedback "${{ inputs.feedback }}"

@@ -1,0 +1,34 @@
+name: Roadmap Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_id:
+        description: "Feature id to sync, or all"
+        required: true
+        default: all
+  push:
+    branches:
+      - main
+    paths:
+      - "roadmap/features.json"
+      - "roadmap/README.md"
+      - "script/roadmap_lib.py"
+      - "script/sync_roadmap_issues.py"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    name: Sync roadmap issues
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Sync GitHub issues
+        run: python3 script/sync_roadmap_issues.py --feature-id "${{ inputs.feature_id || 'all' }}"

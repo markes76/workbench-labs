@@ -40,6 +40,12 @@ Planned future builds include PDF page editing, PDF OCR, metadata scrubbing, bat
 
 See the full future roadmap in [docs/FEATURE_ROADMAP.md](docs/FEATURE_ROADMAP.md).
 
+## Agentic Roadmap Workflow
+
+The repository includes a human-gated GitHub Actions workflow for building roadmap features on separate branches. Each roadmap item gets a `feature/<id>` branch, a draft integration PR, and a GitHub issue. Agent work targets the feature branch; promotion to `main` happens only after a local macOS app review and explicit approval.
+
+See [docs/AGENTIC_DEVELOPMENT.md](docs/AGENTIC_DEVELOPMENT.md) for the full loop.
+
 ## Brand Assets
 
 The app logo and icon are available in [docs/assets/brand](docs/assets/brand).

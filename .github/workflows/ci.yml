@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "codex/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build and Test
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "25"
+          cache: npm
+
+      - name: Install runtime dependencies
+        run: npm ci
+
+      - name: Build JavaScript runtime
+        run: npm run build:runtime
+
+      - name: Run Swift tests
+        run: swift test
+
+      - name: Run JavaScript runtime smoke test
+        run: npm run test:runtime
+
+      - name: Build app bundle
+        run: ./script/build_and_run.sh --build
+
+      - name: Verify app bundle
+        run: |
+          /usr/bin/plutil -lint dist/WorkbenchLabs.app/Contents/Info.plist
+          /usr/bin/codesign --verify --deep --strict dist/WorkbenchLabs.app
