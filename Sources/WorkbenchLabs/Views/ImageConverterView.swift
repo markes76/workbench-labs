@@ -201,7 +201,18 @@ struct ImageConverterView: View {
         .disabled(output.isEmpty)
 
         Button {
-          revealOutput()
+          if let generatedURL {
+            FileResultActions.copyPaths([generatedURL])
+          }
+        } label: {
+          Label("Copy Path", systemImage: "link")
+        }
+        .disabled(generatedURL == nil)
+
+        Button {
+          if let generatedURL {
+            FileResultActions.reveal([generatedURL])
+          }
         } label: {
           Label("Reveal File", systemImage: "finder")
         }
@@ -236,7 +247,7 @@ struct ImageConverterView: View {
     }
     output = session.output
     errorMessage = session.errorMessage
-    generatedURL = existingFileURL(in: session.output)
+    generatedURL = FileResultMetadata.existingGeneratedFileURLs(from: session.metadata, outputFallback: session.output).first
   }
 
   private func chooseImage() {
@@ -300,7 +311,7 @@ struct ImageConverterView: View {
     isRunning = false
     output = result.output
     errorMessage = nil
-    generatedURL = existingFileURL(in: result.output)
+    generatedURL = FileResultMetadata.existingGeneratedFileURLs(from: result.metadata, outputFallback: result.output).first
     var session = ToolSessionState(definition: ToolRegistry.definition(for: .imageConverter))
     session.input = input
     session.options = options
@@ -322,14 +333,6 @@ struct ImageConverterView: View {
     store.sessions[.imageConverter] = session
   }
 
-  private func existingFileURL(in text: String) -> URL? {
-    text
-      .split(whereSeparator: \.isNewline)
-      .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-      .map { URL(fileURLWithPath: $0) }
-      .first { FileManager.default.fileExists(atPath: $0.path) }
-  }
-
   private func contentType(for format: String) -> UTType {
     switch format {
     case "jpeg": .jpeg
@@ -344,10 +347,5 @@ struct ImageConverterView: View {
     guard !output.isEmpty else { return }
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(output, forType: .string)
-  }
-
-  private func revealOutput() {
-    guard let generatedURL else { return }
-    NSWorkspace.shared.activateFileViewerSelecting([generatedURL])
   }
 }

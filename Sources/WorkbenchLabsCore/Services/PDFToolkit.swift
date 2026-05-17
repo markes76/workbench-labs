@@ -92,7 +92,9 @@ public enum PDFToolkit {
       throw ToolEngineError.invalidInput("Could not write merged PDF to \(outputURL.path).")
     }
     try FileManager.default.moveItem(at: temporaryURL, to: outputURL)
-    return ToolResult(output: "Merged \(urls.count) PDFs into:\n\(outputURL.path)")
+    var metadata = FileResultMetadata.metadata(generatedFileURLs: [outputURL])
+    metadata["files"] = String(urls.count)
+    return ToolResult(output: "Merged \(urls.count) PDFs into:\n\(outputURL.path)", metadata: metadata)
   }
 
   private static func split(input: String, pages: String, outputDirectory: String?) throws -> ToolResult {
@@ -129,7 +131,12 @@ public enum PDFToolkit {
       outputPaths.append(outputURL.path)
     }
 
-    return ToolResult(output: "Wrote \(outputPaths.count) PDF page files:\n\(outputPaths.joined(separator: "\n"))")
+    var metadata = FileResultMetadata.metadata(generatedFileURLs: outputURLs)
+    metadata["files"] = "1"
+    return ToolResult(
+      output: "Wrote \(outputPaths.count) PDF page files:\n\(outputPaths.joined(separator: "\n"))",
+      metadata: metadata
+    )
   }
 
   private static func openDocument(_ url: URL) throws -> PDFDocument {

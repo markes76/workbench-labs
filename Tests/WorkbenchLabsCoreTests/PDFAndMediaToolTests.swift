@@ -50,6 +50,7 @@ final class PDFAndMediaToolTests: XCTestCase {
 
     XCTAssertTrue(converted.output.contains(outputURL.path), converted.output)
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path))
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: converted.metadata), [outputURL])
   }
 
   func testPDFToolkitSplitsSelectedPagesIntoRealOnePagePDFs() async throws {
@@ -69,6 +70,7 @@ final class PDFAndMediaToolTests: XCTestCase {
       outputDirectoryURL.appendingPathComponent("\(sourceName)-page-5.pdf")
     ]
     XCTAssertTrue(result.output.contains("Wrote 3 PDF page files"), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata), expectedURLs)
     for url in expectedURLs {
       XCTAssertTrue(FileManager.default.fileExists(atPath: url.path), "Missing split file: \(url.path)")
       XCTAssertEqual(PDFDocument(url: url)?.pageCount, 1, "Split file should contain exactly one page: \(url.path)")
@@ -94,6 +96,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
     XCTAssertEqual(PDFDocument(url: URL(fileURLWithPath: createdPath))?.pageCount, 1)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
   }
 
   func testImageConverterCreatesCollisionSafeOutputWithoutOverwritingExistingFile() async throws {
@@ -114,6 +117,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertFalse(result.output.contains(outputURL.path), result.output)
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
   }
 
   func testPDFMergeCreatesCollisionSafeOutputWithoutOverwritingExistingFile() async throws {
@@ -135,6 +139,7 @@ final class PDFAndMediaToolTests: XCTestCase {
     let createdPath = result.output.split(separator: "\n").last.map(String.init) ?? ""
     XCTAssertTrue(FileManager.default.fileExists(atPath: createdPath), result.output)
     XCTAssertEqual(PDFDocument(url: URL(fileURLWithPath: createdPath))?.pageCount, 2)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [createdPath])
   }
 
   func testNewDocumentAndMediaToolsHaveHelpfulEmptyInputOutput() async throws {
@@ -170,7 +175,20 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertTrue(outputPath.hasPrefix(sourceURL.deletingLastPathComponent().path), result.output)
     XCTAssertTrue(outputPath.hasSuffix(".mp3"), result.output)
     XCTAssertTrue(FileManager.default.fileExists(atPath: outputPath), result.output)
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: result.metadata).map(\.path), [outputPath])
     tempURLs.append(URL(fileURLWithPath: outputPath))
+  }
+
+  func testFileResultMetadataRoundTripsGeneratedFilePaths() {
+    let urls = [
+      URL(fileURLWithPath: "/tmp/Workbench Labs/output one.pdf"),
+      URL(fileURLWithPath: "/tmp/Workbench Labs/output two.pdf")
+    ]
+
+    let metadata = FileResultMetadata.metadata(generatedFileURLs: urls)
+
+    XCTAssertEqual(metadata[FileResultMetadata.generatedFileCountKey], "2")
+    XCTAssertEqual(FileResultMetadata.generatedFileURLs(from: metadata), urls)
   }
 
   private func makePDF(named name: String, text: String = "Workbench Labs", pageCount: Int = 1) throws -> URL {
