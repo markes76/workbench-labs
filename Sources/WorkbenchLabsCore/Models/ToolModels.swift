@@ -63,6 +63,7 @@ public enum ToolID: String, CaseIterable, Codable, Identifiable, Sendable {
   case pdfOCR
   case imageConverter
   case batchImageResizer
+  case imageMetadataInspector
   case videoConverter
 
   public var id: String { rawValue }

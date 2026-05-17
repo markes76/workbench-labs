@@ -5,8 +5,8 @@ final class ToolRunnerTests: XCTestCase {
   private let runner = ToolRunner()
 
   func testRegistryContainsDocumentedToolSet() {
-    XCTAssertEqual(ToolRegistry.all.count, 33)
-    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 33)
+    XCTAssertEqual(ToolRegistry.all.count, 34)
+    XCTAssertEqual(Set(ToolRegistry.all.map(\.id)).count, 34)
     XCTAssertEqual(Set(ToolRegistry.all.map(\.id)), Set(ToolID.allCases))
   }
 

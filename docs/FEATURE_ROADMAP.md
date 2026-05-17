@@ -25,13 +25,13 @@ Primary extension points:
 - PDF OCR Text Extractor: OCR scanned PDFs locally with Apple Vision/Tesseract, English/Hebrew language selection, and page-range selection.
 - PDF Metadata Scrubber: inspect metadata and write rebuilt PDFs with selected metadata fields blanked.
 - Batch Image Resizer/Compressor: resize, compress, strip metadata, and batch-convert images locally.
+- Image Metadata Inspector: inspect EXIF/GPS/color metadata and write GPS-scrubbed safe-sharing copies.
 
 ## P1: High-Value Tools
 
 ### Media
 
 1. Video Clip & Audio Extract: trim by start/end, extract MP3/WAV/AAC, generate thumbnails.
-2. Image Metadata Inspector: EXIF/GPS/color profile inspection and scrub.
 
 ### Developer Utilities
 

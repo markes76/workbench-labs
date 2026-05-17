@@ -1,6 +1,7 @@
 import AppKit
 import ImageIO
 import PDFKit
+import UniformTypeIdentifiers
 import XCTest
 @testable import WorkbenchLabsCore
 
@@ -106,6 +107,40 @@ final class PDFAndMediaToolTests: XCTestCase {
     XCTAssertNotEqual(outputURLs[0], existingURL)
     XCTAssertTrue(outputURLs[0].path.hasPrefix(outputDirectoryURL.path), result.output)
     XCTAssertEqual(imagePixelSize(outputURLs[0]), CGSize(width: 5, height: 3))
+  }
+
+  func testImageMetadataInspectorReportsGPSCoordinatesAndPrivacyRisk() async throws {
+    let inputURL = try makeJPEGWithGPS(named: "gps-source.jpg")
+
+    let result = try await runner.run(toolID: .imageMetadataInspector, input: inputURL.path)
+
+    XCTAssertTrue(result.output.contains("GPS: present"), result.output)
+    XCTAssertTrue(result.output.contains("Latitude: 32.0853"), result.output)
+    XCTAssertTrue(result.output.contains("Longitude: 34.7818"), result.output)
+    XCTAssertTrue(result.output.contains("Privacy: geolocation metadata found"), result.output)
+    XCTAssertEqual(result.metadata["gps"], "present")
+  }
+
+  func testImageMetadataInspectorScrubsGeolocationBesideSourceWithoutChangingOriginal() async throws {
+    let inputURL = try makeJPEGWithGPS(named: "gps-private.jpg")
+    XCTAssertNotNil(imageMetadataDictionary(inputURL, key: kCGImagePropertyGPSDictionary))
+
+    var options = ToolRegistry.definition(for: .imageMetadataInspector).defaultOptions
+    options.operation = "scrub"
+    options.boolValues["removeGPS"] = true
+    options.boolValues["removeCameraMetadata"] = false
+    options.boolValues["removeDescriptiveMetadata"] = false
+
+    let result = try await runner.run(toolID: .imageMetadataInspector, input: inputURL.path, options: options)
+
+    let outputURLs = FileResultMetadata.generatedFileURLs(from: result.metadata)
+    XCTAssertEqual(outputURLs.count, 1, result.output)
+    XCTAssertEqual(outputURLs[0].deletingLastPathComponent(), inputURL.deletingLastPathComponent())
+    XCTAssertNotEqual(outputURLs[0], inputURL)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: outputURLs[0].path))
+    XCTAssertNotNil(imageMetadataDictionary(inputURL, key: kCGImagePropertyGPSDictionary), "Original image should be untouched.")
+    XCTAssertNil(imageMetadataDictionary(outputURLs[0], key: kCGImagePropertyGPSDictionary), result.output)
+    XCTAssertTrue(result.output.contains("Removed: GPS location"), result.output)
   }
 
   func testPDFToolkitSplitsSelectedPagesIntoRealOnePagePDFs() async throws {
@@ -573,6 +608,51 @@ final class PDFAndMediaToolTests: XCTestCase {
     try png.write(to: url)
     tempURLs.append(url)
     return url
+  }
+
+  private func makeJPEGWithGPS(named name: String) throws -> URL {
+    let url = tempURL(named: name)
+    let image = NSImage(size: NSSize(width: 12, height: 8))
+    image.lockFocus()
+    NSColor.systemGreen.setFill()
+    NSRect(x: 0, y: 0, width: 12, height: 8).fill()
+    image.unlockFocus()
+    guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+          let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.jpeg.identifier as CFString, 1, nil)
+    else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+
+    let metadata: [CFString: Any] = [
+      kCGImagePropertyGPSDictionary: [
+        kCGImagePropertyGPSLatitude: 32.0853,
+        kCGImagePropertyGPSLatitudeRef: "N",
+        kCGImagePropertyGPSLongitude: 34.7818,
+        kCGImagePropertyGPSLongitudeRef: "E",
+        kCGImagePropertyGPSDateStamp: "2026:05:17"
+      ],
+      kCGImagePropertyExifDictionary: [
+        kCGImagePropertyExifLensModel: "Private Lens"
+      ],
+      kCGImagePropertyTIFFDictionary: [
+        kCGImagePropertyTIFFMake: "Workbench Camera"
+      ]
+    ]
+    CGImageDestinationAddImage(destination, cgImage, metadata as CFDictionary)
+    guard CGImageDestinationFinalize(destination) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    tempURLs.append(url)
+    return url
+  }
+
+  private func imageMetadataDictionary(_ url: URL, key: CFString) -> [CFString: Any]? {
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+    else {
+      return nil
+    }
+    return properties[key] as? [CFString: Any]
   }
 
   private func imagePixelSize(_ url: URL) -> CGSize? {
