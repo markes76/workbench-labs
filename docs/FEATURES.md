@@ -221,6 +221,16 @@ Key features:
 - Redact mode preserves key names and comments while replacing values with `<redacted>`.
 - Values are hidden by default; optional show-values mode is available for trusted local review.
 
+### Git Diff & Ignore Helper
+
+Inspects local repository changes and tests `.gitignore` patterns without running destructive git commands.
+
+Key features:
+- Inspect Repo mode summarizes the repository root, branch, and changed files using read-only git commands.
+- Test Ignore mode evaluates `.gitignore`-style patterns against one or more paths.
+- Supports wildcard patterns, directory patterns, anchored path patterns, and negated rules such as `!important.log`.
+- Reports ignored and kept counts so patterns can be tuned before changing a real repository.
+
 ## Encode & Decode
 
 ### URL Encoder & Decoder

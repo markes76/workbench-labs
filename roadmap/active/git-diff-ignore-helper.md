@@ -10,6 +10,6 @@ Use local git to inspect diffs and help build .gitignore patterns.
 4. When this integration PR is complete, approve and promote it into `main`.
 
 ## Acceptance Criteria
-- [ ] Tool can inspect a repository path and summarize changed files.
-- [ ] Tool can test ignore patterns against paths.
-- [ ] No destructive git commands are used.
+- [x] Tool can inspect a repository path and summarize changed files.
+- [x] Tool can test ignore patterns against paths.
+- [x] No destructive git commands are used.

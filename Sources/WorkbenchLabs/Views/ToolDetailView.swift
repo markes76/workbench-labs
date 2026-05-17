@@ -144,7 +144,7 @@ struct ToolDetailView: View {
   }
 
   private var showsSecondaryEditor: Bool {
-    definition.id == .textDiff || definition.id == .envInspector
+    definition.id == .textDiff || definition.id == .envInspector || definition.id == .gitDiffIgnoreHelper
   }
 
   private var secondaryEditorTitle: String {
@@ -157,6 +157,9 @@ struct ToolDetailView: View {
   private var secondaryEditorPlaceholder: String {
     if definition.id == .textDiff {
       return "Changed text"
+    }
+    if definition.id == .gitDiffIgnoreHelper {
+      return "Paste paths to test, one per line..."
     }
     return "Paste comparison input..."
   }

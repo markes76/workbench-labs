@@ -24,7 +24,8 @@ struct ToolOptionsView: View {
   }
 
   private func hideOptionFromToolbar(_ option: ToolOption) -> Bool {
-    option.key == "secondaryInput" && (definition.id == .textDiff || definition.id == .envInspector)
+    option.key == "secondaryInput" &&
+      (definition.id == .textDiff || definition.id == .envInspector || definition.id == .gitDiffIgnoreHelper)
   }
 
   @ViewBuilder
