@@ -31,7 +31,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Sync GitHub issues
         run: python3 script/sync_roadmap_issues.py --feature-id "${{ inputs.feature_id || 'all' }}"
